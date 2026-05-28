@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Define the Application Status Enum
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+// 2. Define the User Table
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+  createdAt    DateTime      @default(now())
+  applications Application[] // One-to-Many Relation: A user can have many job applications
+}
+
+// 3. Define the Application Table
+model Application {
+  id          Int               @id @default(autoincrement())
+  userId      Int               // Foreign Key linking this record to a specific User
+  company     String
+  role        String
+  status      ApplicationStatus @default(APPLIED) // Uses our Enum values
+  appliedDate DateTime          @default(now())
+  notes       String?           // The '?' means this field is optional (can be null)
+  updatedAt   DateTime          @updatedAt
+
+  // Setting up the explicit relational connection
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
