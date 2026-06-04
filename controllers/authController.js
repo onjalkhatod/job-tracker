@@ -6,7 +6,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // --- REGISTER LOGIC ---
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -32,12 +32,12 @@ const register = async (req, res) => {
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error during registration" });
+    next(error);
   }
 };
 
 // --- LOGIN LOGIC ---
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -59,8 +59,7 @@ const login = async (req, res) => {
 
     res.status(200).json({ token });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error during login" });
+    next(error);
   }
 };
 

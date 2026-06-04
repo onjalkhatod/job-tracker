@@ -28,15 +28,27 @@ model User {
 
 // 3. Define the Application Table
 model Application {
-  id          Int               @id @default(autoincrement())
-  userId      Int               // Foreign Key linking this record to a specific User
-  company     String
-  role        String
-  status      ApplicationStatus @default(APPLIED) // Uses our Enum values
-  appliedDate DateTime          @default(now())
-  notes       String?           // The '?' means this field is optional (can be null)
-  updatedAt   DateTime          @updatedAt
+  id         Int         @id @default(autoincrement())
+  company    String
+  role       String
+  status     String      @default("APPLIED")
+  notes      String?
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviews Interview[] 
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
 
-  // Setting up the explicit relational connection
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Interview {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  date          DateTime
+  time          String
+  round         String      // e.g., "Technical", "Behavioral", "Manager Round"
+  format        String      // e.g., "Zoom", "In-Person", "Phone"
+  location      String?     // Link or physical address
+  completed     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
 }

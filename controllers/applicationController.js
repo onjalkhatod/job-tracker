@@ -2,20 +2,19 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // 1. GET ALL APPLICATIONS (Only for the logged-in user)
-const getApplications = async (req, res) => {
+const getApplications = async (req, res, next) => {
   try {
     const applications = await prisma.application.findMany({
       where: { userId: req.user.userId } // Filtered tightly by the attached token ID
     });
     res.status(200).json(applications);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error while fetching applications' });
+    next(error);
   }
 };
 
 // 2. POST NEW APPLICATION
-const createApplication = async (req, res) => {
+const createApplication = async (req, res, next) => {
   try {
     const { company, role, status, notes } = req.body;
 
@@ -35,13 +34,12 @@ const createApplication = async (req, res) => {
 
     res.status(201).json(newApplication);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error while creating application' });
+    next(error);
   }
 };
 
 // 3. PUT (UPDATE) APPLICATION
-const updateApplication = async (req, res) => {
+const updateApplication = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { company, role, status, notes } = req.body;
@@ -67,13 +65,12 @@ const updateApplication = async (req, res) => {
 
     res.status(200).json(updatedApp);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error while updating application' });
+    next(error);
   }
 };
 
 // 4. DELETE APPLICATION
-const deleteApplication = async (req, res) => {
+const deleteApplication = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -95,8 +92,49 @@ const deleteApplication = async (req, res) => {
 
     res.status(200).json({ message: 'Application deleted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error while deleting application' });
+    next(error);
+  }
+};
+
+const getApplicationStats = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const statsGroup = await prisma.application.groupBy({
+      by: ['status'],
+      where: { userId: userId },
+      _count: { status: true }
+    });
+
+    const upcomingInterviewsCount = await prisma.interview.count({
+      where: {
+        application: { userId: userId },
+        completed: false,
+        date: { gte: new Date() }
+      }
+    });
+
+    const statsMap = {
+      total: 0,
+      applied: 0,
+      screening: 0,
+      interview: 0,
+      offer: 0,
+      rejected: 0,
+      upcomingInterviews: upcomingInterviewsCount
+    };
+
+    statsGroup.forEach(item => {
+      const lowerStatus = item.status.toLowerCase();
+      if (lowerStatus in statsMap) {
+        statsMap[lowerStatus] = item._count.status;
+        statsMap.total += item._count.status;
+      }
+    });
+
+    res.status(200).json(statsMap);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -104,5 +142,6 @@ module.exports = {
   getApplications,
   createApplication,
   updateApplication,
-  deleteApplication
+  deleteApplication,
+  getApplicationStats 
 };
