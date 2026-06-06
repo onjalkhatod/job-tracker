@@ -1,0 +1,81 @@
+const BASE_URL = 'http://localhost:5000/api';
+
+// Helper to dynamically inject the JWT token from localStorage
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+// Centralized response and error unboxing engine
+const handleResponse = async (response) => {
+  let json = {};
+  try {
+    json = await response.json();
+  } catch {
+    // Optional catch binding (omitting the unused 'e' variable) to satisfy strict ESLint rules
+    throw new Error(`Server responded with status ${response.status} (Non-JSON payload)`);
+  }
+  
+  if (!response.ok) {
+    // Unbox backend validation arrays or fallback cleanly to status text codes
+    const errorMsg = 
+      (json.errors && Array.isArray(json.errors) ? json.errors.join(', ') : null) || 
+      json.message || 
+      json.error || 
+      json.msg || 
+      `Server Error: ${response.status}`;
+      
+    throw new Error(errorMsg);
+  }
+  return json;
+};
+
+export const api = {
+  auth: {
+    register: (userData) => 
+      fetch(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      }).then(handleResponse),
+
+    login: (credentials) => 
+      fetch(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      }).then(handleResponse),
+  },
+
+  applications: {
+    getAll: () => 
+      fetch(`${BASE_URL}/applications`, {
+        method: 'GET',
+        headers: getHeaders(),
+      }).then(handleResponse),
+
+    create: (applicationData) => 
+      fetch(`${BASE_URL}/applications`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(applicationData),
+      }).then(handleResponse),
+
+    update: (id, updateData) => 
+      fetch(`${BASE_URL}/applications/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updateData),
+      }).then(handleResponse),
+
+    delete: (id) => 
+      fetch(`${BASE_URL}/applications/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      }).then(handleResponse),
+  },
+};
