@@ -9,27 +9,23 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Applications from '@/pages/Applications';
 import Analytics from '@/pages/Analytics'; 
+import ApplicationDetail from '@/pages/ApplicationDetail'; 
 
 export default function App() {
   return (
     <AuthProvider>
-      {/* 🚀 GLOBAL NOTIFICATION CONTEXT HUB: Mounted here to handle layout-agnostic popups */}
       <Toaster position="top-right" richColors closeButton />
 
       <BrowserRouter>
-        {/* GLOBAL HIERARCHY FRAME: This keeps the navbar fixed beautifully at the top level */}
         <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
           <Navbar />
           
-          {/* Main viewport segment */}
           <Routes>
-            {/* Public Entry Gateways */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Secure Console Routes: Wrapped inside the sidebar framework beneath the navbar */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DashboardLayout>
@@ -42,6 +38,15 @@ export default function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <Applications />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* ➕ 2. Register the dynamic dynamic parameter matcher layout engine here */}
+            <Route path="/applications/:id" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ApplicationDetail />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

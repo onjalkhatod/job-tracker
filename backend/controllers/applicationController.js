@@ -98,50 +98,95 @@ const deleteApplication = async (req, res, next) => {
 
 const getApplicationStats = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.userId; 
 
-    const statsGroup = await prisma.application.groupBy({
-      by: ['status'],
-      where: { userId: userId },
-      _count: { status: true }
+    // 1. Fetch all raw applications belonging to this authenticated user
+    const applications = await prisma.application.findMany({
+      where: { userId }
     });
 
-    const upcomingInterviewsCount = await prisma.interview.count({
-      where: {
-        application: { userId: userId },
-        completed: false,
-        date: { gte: new Date() }
-      }
+    // 2. Compute live analytical counts for your stat cards matrix
+    const totalApplied = applications.length;
+    const inProgress = applications.filter(app => app.status === 'SCREENING' || app.status === 'INTERVIEW').length;
+    const offers = applications.filter(app => app.status === 'OFFER').length;
+    const rejected = applications.filter(app => app.status === 'REJECTED').length;
+    const upcomingInterviews = applications.filter(app => app.status === 'INTERVIEW').length;
+
+    // 3. Structure Pipeline Breakdown array format required by your frontend BarChart
+    const byStatus = [
+      { name: 'Applied', count: applications.filter(app => app.status === 'APPLIED').length },
+      { name: 'Screening', count: applications.filter(app => app.status === 'SCREENING').length },
+      { name: 'Interview', count: upcomingInterviews },
+      { name: 'Offers', count: offers },
+      { name: 'Rejected', count: rejected },
+    ];
+
+    // 4. Group data chronologically by month for your high-density AreaChart trend line
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyGroups = {};
+
+    applications.forEach(app => {
+      const date = app.appliedDate ? new Date(app.appliedDate) : new Date();
+      const monthName = months[date.getMonth()];
+      monthlyGroups[monthName] = (monthlyGroups[monthName] || 0) + 1;
     });
 
-    const statsMap = {
-      total: 0,
-      applied: 0,
-      screening: 0,
-      interview: 0,
-      offer: 0,
-      rejected: 0,
-      upcomingInterviews: upcomingInterviewsCount
-    };
+    // Format trends object mapping arrays safely for the Recharts engine data key properties
+    const monthlyTrends = Object.keys(monthlyGroups).map(month => ({
+      month,
+      count: monthlyGroups[month]
+    }));
 
-    statsGroup.forEach(item => {
-      const lowerStatus = item.status.toLowerCase();
-      if (lowerStatus in statsMap) {
-        statsMap[lowerStatus] = item._count.status;
-        statsMap.total += item._count.status;
-      }
+    // If the database timeline is clean but empty, send down stable coordinates so charts don't crash
+    const finalTrends = monthlyTrends.length > 0 ? monthlyTrends : [
+      { month: 'Apr', count: 0 },
+      { month: 'May', count: 0 },
+      { month: 'Jun', count: 0 }
+    ];
+
+    // 5. Transmit final unified JSON telemetry data structure back down to frontend useQuery hook
+    res.status(200).json({
+      totalApplied,
+      inProgress,
+      offers,
+      rejected,
+      upcomingInterviews,
+      byStatus,
+      monthlyTrends: finalTrends
     });
 
-    res.status(200).json(statsMap);
   } catch (error) {
     next(error);
   }
 };
+
+const getApplicationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const application = await prisma.application.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        interviews: true // 🛠️ CRITICAL: If this line is missing, your frontend view breaks when matching lists!
+      }
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: "Application tracking card parameters not found." });
+    }
+
+    res.status(200).json(application);
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   getApplications,
   createApplication,
   updateApplication,
   deleteApplication,
-  getApplicationStats 
+  getApplicationStats,
+  getApplicationById  
 };

@@ -46,9 +46,10 @@ model Interview {
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   date          DateTime
   time          String
-  round         String      // e.g., "Technical", "Behavioral", "Manager Round"
-  format        String      // e.g., "Zoom", "In-Person", "Phone"
-  location      String?     // Link or physical address
+  round         String      
+  format        String      
+  notes         String?     // 🛠️ ADD THIS LINE
+  location      String?     
   completed     Boolean     @default(false)
   createdAt     DateTime    @default(now())
 }

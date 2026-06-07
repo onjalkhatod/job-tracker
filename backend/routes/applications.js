@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { createInterview, getApplicationInterviews } = require('../controllers/interviewController');  
 const { body, validationResult } = require('express-validator');
+
+const verifyToken = require('../middleware/auth');
+const { createInterview, getApplicationInterviews } = require('../controllers/interviewController');  
 const { 
   getApplications, 
   createApplication, 
   updateApplication, 
   deleteApplication,
-  getApplicationStats // New controller function
+  getApplicationStats,
+  getApplicationById 
 } = require('../controllers/applicationController');
-const verifyToken = require('../middleware/auth');
 
 const validateFields = (req, res, next) => {
   const errors = validationResult(req);
@@ -19,11 +21,16 @@ const validateFields = (req, res, next) => {
   next();
 };
 
-// GET Stats endpoint (MUST go BEFORE /:id so it doesn't treat 'stats' as an ID parameter)
+// 1. GET Stats endpoint (Static path)
 router.get('/stats', verifyToken, getApplicationStats);
 
+// 2. GET All applications general collection (Static path)
 router.get('/', verifyToken, getApplications);
 
+// 3. GET Single Application Detail record (Dynamic path matching parameter)
+router.get('/:id', verifyToken, getApplicationById);
+
+// 4. POST New single application payload 
 router.post(
   '/',
   verifyToken,
@@ -39,9 +46,11 @@ router.post(
   createApplication
 );
 
+// 5. PUT / DELETE endpoints
 router.put('/:id', verifyToken, updateApplication);
 router.delete('/:id', verifyToken, deleteApplication);
 
+// 6. Nested tracks for interview logs
 router.post('/:applicationId/interviews', verifyToken, createInterview);
 router.get('/:applicationId/interviews', verifyToken, getApplicationInterviews);
 

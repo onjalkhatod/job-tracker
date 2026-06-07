@@ -1,145 +1,274 @@
-import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { getCountdown } from '@/lib/dateUtils';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, ArrowLeft, Check, CheckCircle2, Video, Phone, MapPin } from 'lucide-react';
+import { Calendar, Building2, Briefcase, FileText, Plus, CheckCircle2, Clock, ChevronLeft } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ApplicationDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const token = localStorage.getItem('token');
-  const headers = { Authorization: `Bearer ${token}` };
+  
+  // State for adding interviews — Format matched to default select option value
+  const [interviewForm, setInterviewForm] = useState({ 
+    date: '', 
+    time: '', 
+    round: 'TECHNICAL', 
+    format: 'Zoom/Meet', 
+    notes: '' 
+  });
 
-  // Query 1: Fetch core info
-  const { data: application, isLoading: appLoading } = useQuery({
+  // 1. Fetch data for this specific role from the database
+  const { data: app, isLoading, isError } = useQuery({
     queryKey: ['application', id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/applications/${id}`, { headers });
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`http://localhost:5000/api/applications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       return res.data;
     }
   });
 
-  // Query 2: Fetch corresponding interview slots array
-  const { data: interviews = [], isLoading: intLoading } = useQuery({
-    queryKey: ['interviews', id],
-    queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/applications/${id}/interviews`, { headers });
-      return res.data;
-    }
-  });
-
-  // Complete status modification mutation block
-  const completeMutation = useMutation({
-    mutationFn: async (interviewId) => {
-      await axios.put(`http://localhost:5000/api/interviews/${interviewId}`, { completed: true }, { headers });
+  // 2. Change Pipeline Status or Update Tracking Notes Mutation
+  const updateAppMutation = useMutation({
+    mutationFn: async (updatedFields) => {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:5000/api/applications/${id}`, updatedFields, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews', id] });
+      queryClient.invalidateQueries({ queryKey: ['application', id] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
-      toast.success('Stage marked as completed successfully');
+      toast.success('Application parameters synchronized successfully');
     }
   });
 
-  if (appLoading || intLoading) {
-    return (
-      <div className="p-8 space-y-4 max-w-3xl mx-auto">
-        <Skeleton className="h-6 w-24" />
-        <Skeleton className="h-12 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-      </div>
-    );
-  }
+  // 3. Create a new Interview entry line mutation
+  const addInterviewMutation = useMutation({
+    mutationFn: async (newInterview) => {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`http://localhost:5000/api/applications/${id}/interviews`, newInterview, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application', id] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
+      setInterviewForm({ date: '', time: '', round: 'TECHNICAL', format: 'Zoom/Meet', notes: '' });
+      toast.success('Interview row appended to timeline');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.error || 'Failed to log interview details');
+    }
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-slate-500 font-medium">Resolving application parameters...</div>;
+  if (isError) return <div className="p-8 text-center text-red-500 font-bold">Failed to find application mapping structures.</div>;
+
+  const handleInterviewSubmit = (e) => {
+    e.preventDefault();
+    if (!interviewForm.date || !interviewForm.time) {
+      toast.error('Date and time inputs are required.');
+      return;
+    }
+
+    const payload = {
+      ...interviewForm,
+      date: new Date(interviewForm.date).toISOString() 
+    };
+
+    addInterviewMutation.mutate(payload);
+  };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200">
-      <Link to="/applications" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors">
-        <ArrowLeft className="h-4 w-4" /> Back to Tracked Roles
-      </Link>
+    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
+      
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate('/applications')}
+        className="text-slate-500 hover:text-slate-900 -ml-3 flex items-center gap-1"
+      >
+        <ChevronLeft className="h-4 w-4" /> Back to Tracked Roles
+      </Button>
 
-      <div className="border rounded-2xl p-6 bg-white shadow-sm space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{application?.company}</h1>
-            <p className="text-lg text-slate-500 font-medium mt-0.5">{application?.role}</p>
-          </div>
-          <span className="px-3 py-1 rounded-full text-xs font-bold border bg-slate-50 border-slate-200 text-slate-700">
-            {application?.status}
-          </span>
-        </div>
-        {application?.notes && (
-          <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">{application.notes}</p>
-        )}
-      </div>
-
-      {/* Interview Agenda Tracking Block Stack Component Layout */}
-      <div className="border rounded-2xl p-6 bg-white shadow-sm space-y-4">
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-purple-600" /> Scheduled Stages Pipeline
-        </h3>
-
-        {interviews.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4 text-center border border-dashed rounded-xl bg-slate-50/50">
-            No dynamic process components tracked yet for this employment card context.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {interviews.map((item) => {
-              const countdown = getCountdown(item.date);
-              const isOverdue = countdown === 'Overdue';
-
-              return (
-                <div 
-                  key={item.id} 
-                  className={`border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all ${
-                    item.completed 
-                      ? 'bg-slate-50/60 border-slate-100 opacity-65 select-none' 
-                      : 'bg-white border-slate-200/80 shadow-sm'
-                  }`}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        <div className="lg:col-span-2 space-y-6">
+          
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-6 w-6 text-slate-700" />
+                <h1 className="text-2xl font-black text-slate-900">{app.company}</h1>
+              </div>
+              
+              <div className="w-36">
+                <Select 
+                  value={app.status} 
+                  onValueChange={(newStatus) => updateAppMutation.mutate({ status: newStatus })}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2.5 rounded-lg mt-0.5 ${item.completed ? 'bg-slate-100 text-slate-400' : 'bg-purple-50 text-purple-600'}`}>
-                      {item.format === 'Video' ? <Video className="h-4 w-4" /> : item.format === 'Phone' ? <Phone className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className={`font-bold text-sm ${item.completed ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{item.round}</h4>
-                        {item.completed ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md flex items-center gap-0.5">
-                            <CheckCircle2 className="h-3 w-3" /> Done
-                          </span>
-                        ) : (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>
-                            {countdown}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1 font-medium">
-                        {new Date(item.date).toLocaleDateString()} at {item.time} — <span className="italic">{item.format} Session</span>
-                      </p>
-                      {item.location && !item.completed && (
-                        <p className="text-xs text-purple-600 font-semibold mt-1 break-all max-w-md">{item.location}</p>
-                      )}
-                    </div>
-                  </div>
+                  <SelectTrigger className="w-full bg-slate-50 font-semibold border-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="APPLIED">Applied</SelectItem>
+                    <SelectItem value="SCREENING">Screening</SelectItem>
+                    <SelectItem value="INTERVIEW">Interview</SelectItem>
+                    <SelectItem value="OFFER">Offer</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-                  {!item.completed && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => completeMutation.mutate(item.id)}
-                      className="h-8 text-xs font-semibold shrink-0 gap-1 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
-                    >
-                      <Check className="h-3.5 w-3.5 text-green-600" /> Mark as Done
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+            <div className="pt-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Role Title</label>
+              <p className="font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                <Briefcase className="h-4 w-4 text-slate-400" /> {app.role}
+              </p>
+            </div>
+
+            <div className="pt-4 border-t space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" /> Core Tracking Context Notes
+              </label>
+              <textarea
+                className="w-full min-h-[100px] border border-slate-200 rounded-lg p-3 text-sm text-slate-700 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition-all resize-none"
+                placeholder="Type compensation targets, interviewer names, or application metrics. Click outside the box to auto-save."
+                defaultValue={app.notes || ''}
+                onBlur={(e) => updateAppMutation.mutate({ notes: e.target.value })}
+              />
+            </div>
           </div>
-        )}
+
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-slate-500" /> Scheduled Stages Pipeline
+            </h2>
+            
+            {!app.interviews || app.interviews.length === 0 ? (
+              <p className="text-sm text-slate-400 bg-slate-50 p-6 rounded-lg border border-dashed text-center">
+                No dynamic process components tracked yet for this employment card context.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {app.interviews.map((interview) => (
+                  <div key={interview.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-extrabold bg-slate-200 text-slate-800 px-2 py-0.5 rounded tracking-wide uppercase">
+                          {interview.round}
+                        </span>
+                        <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded tracking-wide uppercase">
+                          {interview.format}
+                        </span>
+                        <p className="text-sm font-bold text-slate-800">
+                          {new Date(interview.date).toLocaleDateString()} at {interview.time}
+                        </p>
+                      </div>
+                      {interview.notes && <p className="text-xs text-slate-500 italic mt-0.5">"{interview.notes}"</p>}
+                    </div>
+                    {interview.completed ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Schedule Interview</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Append an upcoming evaluation timestamp loop straight onto your tracking cards ledger.</p>
+          </div>
+          
+          <form onSubmit={handleInterviewSubmit} className="space-y-3 pt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Event Date</label>
+              <input 
+                type="date" 
+                className="w-full flex h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                value={interviewForm.date} 
+                onChange={(e) => setInterviewForm({...interviewForm, date: e.target.value})} 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Event Time</label>
+              <Input 
+                type="text" 
+                placeholder="e.g. 2:00 PM" 
+                className="bg-white border-slate-200"
+                value={interviewForm.time} 
+                onChange={(e) => setInterviewForm({...interviewForm, time: e.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Round Classification</label>
+              <Select value={interviewForm.round} onValueChange={(val) => setInterviewForm({...interviewForm, round: val})}>
+                <SelectTrigger className="bg-white border-slate-200"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PHONE">Phone Screen</SelectItem>
+                  <SelectItem value="TECHNICAL">Technical Round</SelectItem>
+                  <SelectItem value="BEHAVIORAL">Behavioral Fit</SelectItem>
+                  <SelectItem value="MANAGEMENT">Manager / Director</SelectItem>
+                  <SelectItem value="ONSITE">Onsite Loop</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Interview Format</label>
+              <Select 
+                value={interviewForm.format} 
+                onValueChange={(val) => setInterviewForm({...interviewForm, format: val})}
+              >
+                <SelectTrigger className="bg-white border-slate-200">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Zoom/Meet">Online (Zoom/Meet)</SelectItem>
+                  <SelectItem value="Phone Call">Phone Call</SelectItem>
+                  <SelectItem value="In-Person">In-Person (On-site)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Focus Notes</label>
+              <Input 
+                type="text" 
+                placeholder="Panelists, topics, or index pointers..." 
+                className="bg-white border-slate-200"
+                value={interviewForm.notes} 
+                onChange={(e) => setInterviewForm({...interviewForm, notes: e.target.value})} 
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={addInterviewMutation.isPending}
+              className="w-full bg-slate-900 text-white hover:bg-slate-800 font-semibold flex items-center justify-center gap-1.5 mt-2"
+            >
+              <Plus className="h-4 w-4 stroke-[3]" /> 
+              {addInterviewMutation.isPending ? 'Logging Meeting...' : 'Log Meeting Row'}
+            </Button>
+          </form>
+        </div>
+
       </div>
     </div>
   );

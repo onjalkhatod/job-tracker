@@ -50,7 +50,8 @@ export default function ApplicationForm({ application, onClose }) {
 
   useEffect(() => {
     if (showInterviewSection && fieldsLengthRef.current === 0) {
-      append({ date: '', time: '', round: 'HR Screening', format: 'Video', location: '' });
+      // Changed initial round/format defaults to match expected backend codes
+      append({ date: '', time: '', round: 'HR', format: 'ONLINE', location: '' });
     }
   }, [showInterviewSection, append]);
 
@@ -138,7 +139,7 @@ export default function ApplicationForm({ application, onClose }) {
               variant="outline" 
               size="sm" 
               className="h-7 bg-white text-xs gap-1 border-slate-200"
-              onClick={() => append({ date: '', time: '', round: 'Technical Round 1', format: 'Video', location: '' })}
+              onClick={() => append({ date: '', time: '', round: 'TECHNICAL', format: 'ONLINE', location: '' })}
             >
               <Plus className="h-3 w-3" /> Add Round
             </Button>
@@ -161,25 +162,24 @@ export default function ApplicationForm({ application, onClose }) {
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Round Type</label>
                   <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm"
+                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm focus:outline-none"
                     {...register(`interviews.${index}.round`)}
                   >
-                    <option value="HR Screening">HR Screening</option>
-                    <option value="Technical Round 1">Technical Round 1</option>
-                    <option value="Technical Round 2">Technical Round 2</option>
-                    <option value="Final Round">Final Round</option>
-                    <option value="Other">Other</option>
+                    <option value="TECHNICAL">Technical Round</option>
+                    <option value="HR">HR Screening</option>
+                    <option value="BEHAVIORAL">Behavioral Round</option>
+                    <option value="MANAGER">Manager Round</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Format</label>
                   <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm"
+                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm focus:outline-none"
                     {...register(`interviews.${index}.format`)}
                   >
-                    <option value="Video">Video</option>
-                    <option value="Phone">Phone</option>
-                    <option value="On-site">On-site</option>
+                    <option value="ONLINE">Online (Zoom/Meet)</option>
+                    <option value="IN_PERSON">In Person (On-site)</option>
+                    <option value="PHONE">Phone Call</option>
                   </select>
                 </div>
               </div>

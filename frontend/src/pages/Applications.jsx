@@ -8,9 +8,11 @@ import { getCountdown } from '@/lib/dateUtils';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+// ➕ Added Dialog imports for our input form layout modal container
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon } from 'lucide-react';
+import { Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon, Plus } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/applications';
 
@@ -28,6 +30,10 @@ export default function Applications() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  // ➕ Form State Configurations
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ company: '', role: '', status: 'APPLIED', notes: '' });
+
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(handler);
@@ -44,6 +50,27 @@ export default function Applications() {
     },
   });
 
+  // ➕ Create Record Asynchronous Mutation Function
+  const createMutation = useMutation({
+    mutationFn: async (newApp) => {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(API_URL, newApp, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
+      setIsModalOpen(false);
+      setFormData({ company: '', role: '', status: 'APPLIED', notes: '' });
+      toast.success('New role successfully logged to ledger');
+    },
+    onError: () => {
+      toast.error('Failed to register application details');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       const token = localStorage.getItem('token');
@@ -55,6 +82,15 @@ export default function Applications() {
       toast.success('Application profile safely flushed');
     }
   });
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.company || !formData.role) {
+      toast.error('Company identity and role fields are required');
+      return;
+    }
+    createMutation.mutate(formData);
+  };
 
   const filteredApplications = applications.filter((app) => {
     const matchesSearch = app.company.toLowerCase().includes(debouncedSearch.toLowerCase());
@@ -72,7 +108,6 @@ export default function Applications() {
     );
   }
 
-  // 🎯 FIXED: Explicitly use the 'isError' variable to satisfy the ESLint linter check rules safely
   if (isError) {
     return (
       <div className="p-16 max-w-md mx-auto text-center space-y-4 animate-in fade-in duration-200">
@@ -98,13 +133,14 @@ export default function Applications() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-200">
+      {/* Action Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-6">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Tracked Roles</h1>
           <p className="text-muted-foreground mt-1">Refine and filter your ongoing opportunities.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-stretch sm:items-center">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
@@ -116,7 +152,7 @@ export default function Applications() {
             />
           </div>
 
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="bg-white">
                 <div className="flex items-center gap-2">
@@ -134,6 +170,15 @@ export default function Applications() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* ➕ Mounted Add Application Trigger Button Element */}
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-1.5 shadow-sm shadow-slate-900/10"
+          >
+            <Plus className="h-4 w-4 stroke-[3]" />
+            Add Application
+          </Button>
         </div>
       </div>
 
@@ -224,6 +269,73 @@ export default function Applications() {
           })}
         </div>
       )}
+
+      {/* ➕ Integrated Shadow Form Capture Dialog Shell */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white">
+          <DialogHeader>
+            <DialogTitle className="font-bold text-xl text-slate-900">Track New Position</DialogTitle>
+            <DialogDescription>
+              Register ongoing employment metrics to aggregate pipeline charting.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Company Identity</label>
+              <Input 
+                type="text" 
+                placeholder="e.g. Stripe, Google" 
+                value={formData.company}
+                onChange={(e) => setFormData({...formData, company: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Role Title</label>
+              <Input 
+                type="text" 
+                placeholder="e.g. Frontend Engineer" 
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Pipeline Stage Status</label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(val) => setFormData({...formData, status: val})}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="APPLIED">Applied</SelectItem>
+                  <SelectItem value="SCREENING">Screening</SelectItem>
+                  <SelectItem value="INTERVIEW">Interview</SelectItem>
+                  <SelectItem value="OFFER">Offer</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Context Notes (Optional)</label>
+              <Input 
+                type="text" 
+                placeholder="Salary, tech stack, or points of interest..." 
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              />
+            </div>
+            <DialogFooter className="pt-4 border-t gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                Dismiss
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending} className="bg-slate-900 text-white hover:bg-slate-800">
+                {createMutation.isPending ? 'Logging data...' : 'Commit Position'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
