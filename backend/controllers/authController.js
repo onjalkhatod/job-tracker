@@ -57,7 +57,15 @@ const login = async (req, res, next) => {
       { expiresIn: '1d' }
     );
 
-    res.status(200).json({ token });
+    // Deliver BOTH token and user object context properties to the caller client
+    res.status(200).json({ 
+      token,
+      user: {
+        userId: user.id,
+        email: user.email,
+        name: user.name
+      }
+    });
   } catch (error) {
     next(error);
   }

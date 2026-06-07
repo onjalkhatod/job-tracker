@@ -4,7 +4,10 @@ import { createContext, useContext, useState } from 'react';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem('token');
+    return (!savedToken || savedToken === 'undefined') ? null : savedToken;
+  });
   
   // Hardened user state initializer protected against stringified 'undefined' or malformed JSON
   const [user, setUser] = useState(() => {
@@ -20,6 +23,10 @@ export function AuthProvider({ children }) {
   });
 
   const login = (newToken, userData) => {
+    if (!newToken || !userData) {
+      console.error("AuthContext: Missing token or user payload during login dispatch.");
+      return;
+    }
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
@@ -33,7 +40,8 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const isAuthenticated = !!token;
+  // Guard rails: Ensure BOTH token and user profile structures are validated before granting access
+  const isAuthenticated = !!token && !!user;
 
   return (
     <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated }}>

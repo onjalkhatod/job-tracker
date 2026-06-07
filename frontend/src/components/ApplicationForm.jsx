@@ -1,207 +1,223 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useEffect, useRef } from 'react';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Plus, Trash2, CalendarDays } from 'lucide-react';
 
-export default function ApplicationForm({ open, onOpenChange, applicationToEdit = null }) {
+export default function ApplicationForm({ application, onClose }) {
   const queryClient = useQueryClient();
-  const isEditMode = !!applicationToEdit;
+  const isEditing = !!application;
 
-  const [formData, setFormData] = useState({
-    company: "",
-    position: "",
-    location: "",
-    status: "APPLIED",
-    url: "",
-    dateApplied: new Date().toISOString().split("T")[0],
-    notes: ""
+  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm({
+    defaultValues: {
+      company: application?.company || '',
+      role: application?.role || '',
+      status: application?.status || 'APPLIED',
+      notes: application?.notes || '',
+      interviews: []
+    }
   });
 
-  // Safe side-effect processing using microtask framing
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'interviews'
+  });
+
+  // Watch the live status value through control (optimized for React Compiler)
+  const currentStatus = useWatch({
+    control,
+    name: 'status',
+    defaultValue: application?.status || 'APPLIED'
+  });
+  
+  const showInterviewSection = currentStatus === 'SCREENING' || currentStatus === 'INTERVIEW';
+
+  // Use a mutable ref to track fields length to prevent unnecessary effect execution triggers
+  const fieldsLengthRef = useRef(fields.length);
   useEffect(() => {
-    if (!open) return; // Only process layout configurations when modal forces visibility
+    fieldsLengthRef.current = fields.length;
+  }, [fields.length]);
 
-    // requestAnimationFrame deferral pushes the setState execution safely outside the Dialog lifecycle loop
-    const frameId = requestAnimationFrame(() => {
-      if (isEditMode && applicationToEdit) {
-        setFormData({
-          company: applicationToEdit.company || "",
-          position: applicationToEdit.position || "",
-          location: applicationToEdit.location || "",
-          status: (applicationToEdit.status || "APPLIED").toUpperCase(),
-          url: applicationToEdit.url || "",
-          dateApplied: applicationToEdit.dateApplied 
-            ? new Date(applicationToEdit.dateApplied).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0],
-          notes: applicationToEdit.notes || ""
-        });
+  useEffect(() => {
+    if (showInterviewSection && fieldsLengthRef.current === 0) {
+      append({ date: '', time: '', round: 'HR Screening', format: 'Video', location: '' });
+    }
+  }, [showInterviewSection, append]);
+
+  const onSubmit = async (formData) => {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    
+    try {
+      let appId = application?.id;
+
+      if (isEditing) {
+        await axios.put(`http://localhost:5000/api/applications/${appId}`, {
+          company: formData.company,
+          role: formData.role,
+          status: formData.status,
+          notes: formData.notes
+        }, { headers });
       } else {
-        setFormData({
-          company: "",
-          position: "",
-          location: "",
-          status: "APPLIED",
-          url: "",
-          dateApplied: new Date().toISOString().split("T")[0],
-          notes: ""
-        });
+        const appRes = await axios.post('http://localhost:5000/api/applications', {
+          company: formData.company,
+          role: formData.role,
+          status: formData.status,
+          notes: formData.notes
+        }, { headers });
+        appId = appRes.data.id;
       }
-    });
 
-    return () => cancelAnimationFrame(frameId);
-  }, [applicationToEdit, isEditMode, open]);
+      if (showInterviewSection && formData.interviews?.length > 0) {
+        const validInterviews = formData.interviews.filter(i => i.date && i.time);
+        
+        for (const interview of validInterviews) {
+          await axios.post(`http://localhost:5000/api/applications/${appId}/interviews`, interview, { headers });
+        }
+      }
 
-  // Mutation 1: POST Pipeline (Create)
-  const createMutation = useMutation({
-    mutationFn: (newJob) => api.applications.create(newJob),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      onOpenChange(false);
-    },
-  });
-
-  // Mutation 2: PUT Pipeline (Update)
-  const updateMutation = useMutation({
-    mutationFn: (updatedJob) => {
-      // Safely check for either id convention structure
-      const targetId = applicationToEdit?.id || applicationToEdit?._id;
-      return api.applications.update(targetId, updatedJob);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      onOpenChange(false);
-    },
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.company || !formData.position) return;
-
-    if (isEditMode) {
-      updateMutation.mutate(formData);
-    } else {
-      createMutation.mutate(formData);
+      toast.success(isEditing ? 'Application records updated' : 'Job application tracked cleanly');
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Pipeline operation failed');
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-        <DialogHeader>
-          <DialogTitle className="text-slate-900 dark:text-slate-50">
-            {isEditMode ? "Edit Application" : "Track New Role"}
-          </DialogTitle>
-          <DialogDescription className="text-slate-500 dark:text-slate-400">
-            {isEditMode 
-              ? "Modify current job parameter boundaries and timeline steps." 
-              : "Log tracking criteria for an active or submitted job opportunity."}
-          </DialogDescription>
-        </DialogHeader>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-2 max-h-[80vh] overflow-y-auto">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Company</label>
+          <Input {...register('company', { required: 'Required field' })} />
+          {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company.message}</p>}
+        </div>
+        <div>
+          <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Role Title</label>
+          <Input {...register('role', { required: 'Required field' })} />
+          {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role.message}</p>}
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Company *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Stripe, OpenAI"
-              className="w-full h-9 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm text-slate-900 dark:text-slate-50 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-          </div>
+      <div>
+        <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Pipeline Progress Status</label>
+        <Select defaultValue={currentStatus} onValueChange={(val) => setValue('status', val, { shouldValidate: true })}>
+          <SelectTrigger className="w-full bg-white border-slate-200">
+            <SelectValue placeholder="Select current phase" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="APPLIED">Applied</SelectItem>
+            <SelectItem value="SCREENING">Screening</SelectItem>
+            <SelectItem value="INTERVIEW">Interview</SelectItem>
+            <SelectItem value="OFFER">Offer</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Role / Position *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Frontend Lead"
-              className="w-full h-9 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm text-slate-900 dark:text-slate-50 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-              value={formData.position}
-              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status</label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
-              >
-                <SelectTrigger className="h-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                  <SelectItem value="APPLIED">Applied</SelectItem>
-                  <SelectItem value="SCREENING">Screening</SelectItem>
-                  <SelectItem value="INTERVIEW">Interview</SelectItem>
-                  <SelectItem value="OFFER">Offer</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+      {showInterviewSection && (
+        <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+              <CalendarDays className="h-4 w-4 text-purple-600" />
+              <span>Schedule Stage Rounds</span>
             </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date Applied</label>
-              <input
-                type="date"
-                className="w-full h-9 rounded-md border border-slate-200 dark:border-slate-800 px-3 py-1 text-sm focus:ring-1 focus:ring-slate-900 focus:outline-none bg-transparent text-slate-900 dark:text-slate-50"
-                value={formData.dateApplied}
-                onChange={(e) => setFormData({ ...formData, dateApplied: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Job Posting Link</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              className="w-full h-9 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm text-slate-900 dark:text-slate-50 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Internal Notes</label>
-            <Textarea
-              placeholder="Add key highlights or recruiter contact points..."
-              className="resize-none min-h-[80px] border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-slate-50"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading} className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200 min-w-[100px]">
-              {isLoading ? "Saving..." : isEditMode ? "Save Changes" : "Create Card"}
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              className="h-7 bg-white text-xs gap-1 border-slate-200"
+              onClick={() => append({ date: '', time: '', round: 'Technical Round 1', format: 'Video', location: '' })}
+            >
+              <Plus className="h-3 w-3" /> Add Round
             </Button>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+
+          {fields.map((field, index) => (
+            <div key={field.id} className="p-3 bg-white border border-slate-200 rounded-lg space-y-3 relative group">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Date</label>
+                  <Input type="date" className="h-8 text-xs" {...register(`interviews.${index}.date`, { required: true })} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Time</label>
+                  <Input type="text" placeholder="e.g. 2:00 PM" className="h-8 text-xs" {...register(`interviews.${index}.time`, { required: true })} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Round Type</label>
+                  <select 
+                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm"
+                    {...register(`interviews.${index}.round`)}
+                  >
+                    <option value="HR Screening">HR Screening</option>
+                    <option value="Technical Round 1">Technical Round 1</option>
+                    <option value="Technical Round 2">Technical Round 2</option>
+                    <option value="Final Round">Final Round</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Format</label>
+                  <select 
+                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm"
+                    {...register(`interviews.${index}.format`)}
+                  >
+                    <option value="Video">Video</option>
+                    <option value="Phone">Phone</option>
+                    <option value="On-site">On-site</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Location / Link (Optional)</label>
+                <Input type="text" placeholder="Zoom Link or Room address" className="h-8 text-xs" {...register(`interviews.${index}.location`)} />
+              </div>
+
+              {fields.length > 1 && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="absolute right-2 top-2 h-7 w-7 p-0 text-slate-400 hover:text-red-600 rounded-md"
+                  onClick={() => remove(index)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div>
+        <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Additional Notes</label>
+        <textarea 
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register('notes')} 
+        />
+      </div>
+
+      <div className="flex justify-end gap-2 border-t pt-4">
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" className="bg-slate-900 text-white hover:bg-slate-800" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving changes...' : isEditing ? 'Update Application' : 'Save Tracked Entry'}
+        </Button>
+      </div>
+    </form>
   );
 }

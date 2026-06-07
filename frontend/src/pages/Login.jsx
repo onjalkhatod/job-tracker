@@ -24,6 +24,11 @@ export default function Login() {
   const mutation = useMutation({
     mutationFn: api.auth.login,
     onSuccess: (data) => {
+      // 🔍 DEBUG LOG: Let's see exactly what the backend sent!
+      console.log("--- BACKEND LOGIN RESPONSE ---");
+      console.log(data);
+      console.log("------------------------------");
+
       login(data.token, data.user);
       navigate('/dashboard');
     },

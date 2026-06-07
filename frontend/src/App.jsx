@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
+import { Toaster } from 'sonner'; 
 import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout'; 
@@ -12,6 +13,9 @@ import Analytics from '@/pages/Analytics';
 export default function App() {
   return (
     <AuthProvider>
+      {/* 🚀 GLOBAL NOTIFICATION CONTEXT HUB: Mounted here to handle layout-agnostic popups */}
+      <Toaster position="top-right" richColors closeButton />
+
       <BrowserRouter>
         {/* GLOBAL HIERARCHY FRAME: This keeps the navbar fixed beautifully at the top level */}
         <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">

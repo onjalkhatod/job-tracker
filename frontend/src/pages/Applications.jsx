@@ -1,264 +1,223 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, Briefcase, Building2, MapPin, ExternalLink, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { getCountdown } from '@/lib/dateUtils';
 
-// Strict color tokens mapping directly to spec requirement
-const STATUS_BADGES = {
-  APPLIED: "bg-blue-500/10 text-blue-500 border-blue-500/20 focus:ring-blue-500",
-  SCREENING: "bg-amber-500/10 text-amber-500 border-amber-500/20 focus:ring-amber-500",
-  INTERVIEW: "bg-purple-500/10 text-purple-500 border-purple-500/20 focus:ring-purple-500",
-  OFFER: "bg-green-500/10 text-green-500 border-green-500/20 focus:ring-green-500",
-  REJECTED: "bg-red-500/10 text-red-500 border-red-500/20 focus:ring-red-500",
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon } from 'lucide-react';
+
+const API_URL = 'http://localhost:5000/api/applications';
+
+const statusColors = {
+  APPLIED: 'bg-blue-50 text-blue-700 border-blue-200',
+  SCREENING: 'bg-amber-50 text-amber-700 border-amber-200',
+  INTERVIEW: 'bg-purple-50 text-purple-700 border-purple-200',
+  OFFER: 'bg-green-50 text-green-700 border-green-200',
+  REJECTED: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export default function Applications() {
   const queryClient = useQueryClient();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    company: '',
-    position: '',
-    location: '',
-    status: 'APPLIED',
-    url: ''
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // 1. Fetch live application records
-  const { data: applications = [], isLoading, isError, error } = useQuery({
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const { data: applications = [], isLoading, isError } = useQuery({
     queryKey: ['applications'],
-    queryFn: api.applications.getAll,
-  });
-
-  // 2. Mutation pipeline to log a new job card
-  const createMutation = useMutation({
-    mutationFn: api.applications.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      setIsFormOpen(false);
-      setFormData({ company: '', position: '', location: '', status: 'APPLIED', url: '' });
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
     },
   });
 
-  // 3. Mutation pipeline to update a job's status inline
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => api.applications.update(id, { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-    },
-  });
-
-  // 4. Mutation pipeline to clear a job card out
   const deleteMutation = useMutation({
-    mutationFn: api.applications.delete,
+    mutationFn: async (id) => {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
-    },
+      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
+      toast.success('Application profile safely flushed');
+    }
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.company || !formData.position) return;
-    createMutation.mutate(formData);
-  };
+  const filteredApplications = applications.filter((app) => {
+    const matchesSearch = app.company.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((n) => <Skeleton key={n} className="h-44 w-full rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  // 🎯 FIXED: Explicitly use the 'isError' variable to satisfy the ESLint linter check rules safely
+  if (isError) {
+    return (
+      <div className="p-16 max-w-md mx-auto text-center space-y-4 animate-in fade-in duration-200">
+        <div className="h-12 w-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
+          <AlertOctagon className="h-6 w-6" />
+        </div>
+        <div>
+          <h3 className="font-bold text-slate-900 text-lg">Pipeline Sync Failure</h3>
+          <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+            We ran into an authentication mismatch or network issue while trying to load your tracked roles ledger matrix.
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['applications'] })}
+          className="border-slate-200 text-slate-700 hover:bg-slate-50"
+        >
+          Retry Connection Stream
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Upper Dashboard Header Section */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-200">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Tracked Roles</h2>
-          <p className="text-sm text-slate-500">Monitor and update your ongoing career opportunities pipeline.</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Tracked Roles</h1>
+          <p className="text-muted-foreground mt-1">Refine and filter your ongoing opportunities.</p>
         </div>
-        {!isLoading && applications.length > 0 && (
-          <Button 
-            onClick={() => setIsFormOpen(!isFormOpen)} 
-            className="bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs py-1.5 h-9"
-          >
-            <Plus className="h-4 w-4" /> {isFormOpen ? 'Close Form' : 'Add Application'}
-          </Button>
-        )}
-      </div>
 
-      {/* Dynamic Creation Form Panel */}
-      {isFormOpen && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg p-6 max-w-2xl shadow-sm flex flex-col gap-4 animate-in fade-in duration-200">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">New Role Entry Parameters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Company *</label>
-              <input
-                type="text" required placeholder="e.g. Google, Stripe"
-                className="w-full rounded-md border border-slate-200 p-2 text-sm focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Position / Title *</label>
-              <input
-                type="text" required placeholder="e.g. Frontend Engineer"
-                className="w-full rounded-md border border-slate-200 p-2 text-sm focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Job Location</label>
-              <input
-                type="text" placeholder="e.g. Remote, San Francisco"
-                className="w-full rounded-md border border-slate-200 p-2 text-sm focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Current Status</label>
-              <select
-                className="w-full rounded-md border border-slate-200 p-2 text-sm bg-white focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="APPLIED">Applied</option>
-                <option value="SCREENING">Screening</option>
-                <option value="INTERVIEW">Interviewing</option>
-                <option value="OFFER">Offer Received</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-600 block mb-1">Posting Link URL</label>
-            <input
-              type="url" placeholder="https://careers.company.com/job/123"
-              className="w-full rounded-md border border-slate-200 p-2 text-sm focus:ring-2 focus:ring-slate-900 focus:outline-none"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Search companies..."
+              className="pl-9 bg-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button 
-            type="submit" 
-            disabled={createMutation.isPending}
-            className="w-full md:w-auto md:self-end bg-slate-900 hover:bg-slate-800 text-white mt-2 px-6"
-          >
-            {createMutation.isPending ? 'Logging Entry...' : 'Save Job Card'}
-          </Button>
-        </form>
-      )}
 
-      {/* Network Async Error Intercept Screen */}
-      {isError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          ⚠️ Failed to resolve database pipeline: {error.message}
-        </div>
-      )}
-
-      {/* Main Structural Layout States View */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((index) => (
-            <div key={index} className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between h-[165px]">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="space-y-2 w-2/3">
-                    <Skeleton className="h-5 w-full bg-slate-200/80" />
-                    <Skeleton className="h-4 w-3/4 bg-slate-200/80" />
-                  </div>
-                  <Skeleton className="h-6 w-20 rounded-full bg-slate-200/80 shrink-0" />
+          <div className="w-full sm:w-48">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="bg-white">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-slate-400" />
+                  <SelectValue placeholder="Filter by status" />
                 </div>
-                <Skeleton className="h-3 w-1/2 bg-slate-200/80" />
-              </div>
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-4">
-                <Skeleton className="h-4 w-24 bg-slate-200/80" />
-                <Skeleton className="h-6 w-6 rounded bg-slate-200/80" />
-              </div>
-            </div>
-          ))}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Statuses</SelectItem>
+                <SelectItem value="APPLIED">Applied</SelectItem>
+                <SelectItem value="SCREENING">Screening</SelectItem>
+                <SelectItem value="INTERVIEW">Interview</SelectItem>
+                <SelectItem value="OFFER">Offer</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      ) : applications.length === 0 ? (
-        <div className="text-center border-2 border-dashed border-slate-200 rounded-lg py-16 px-4 bg-white">
-          <Briefcase className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-          <h3 className="text-base font-semibold text-slate-900">No tracked opportunities logged yet</h3>
-          <p className="text-sm text-slate-500 mt-1 mb-6 max-w-sm mx-auto">
-            Keep your search organized. Log companies, response timelines, and stage transitions cleanly.
-          </p>
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 mx-auto"
-          >
-            <Plus className="h-4 w-4" /> Add your first one
-          </Button>
+      </div>
+
+      {filteredApplications.length === 0 ? (
+        <div className="text-center py-16 border-2 border-dashed rounded-xl bg-slate-50/50">
+          <Briefcase className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+          <h3 className="font-bold text-slate-700">No matching items resolved</h3>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {applications.map((app) => {
-            const appStatusKey = (app.status || 'APPLIED').toUpperCase();
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredApplications.map((app) => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const nextUpcoming = app.interviews?.find(i => !i.completed && i.date >= todayStr);
+            
+            const countdownText = nextUpcoming ? getCountdown(nextUpcoming.date) : null;
+            const isToday = countdownText === 'Today';
+
             return (
               <div 
                 key={app.id} 
-                className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between group relative"
+                className={`group border rounded-xl p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
+                  isToday ? 'border-l-4 border-l-amber-500' : 'border-slate-200/80'
+                }`}
               >
                 <div className="space-y-3">
-                  <div className="flex justify-between items-start gap-2">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h4 className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                        {app.position}
-                      </h4>
-                      <p className="text-sm text-slate-600 font-medium flex items-center gap-1 mt-0.5 line-clamp-1">
-                        <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" /> {app.company}
-                      </p>
+                      <h3 className="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-1.5">
+                        {app.company}
+                        <Link to={`/applications/${app.id}`} className="text-slate-400 hover:text-slate-900 transition-colors">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      </h3>
+                      <p className="text-slate-500 font-semibold text-sm mt-0.5">{app.role}</p>
                     </div>
-
-                    <div className="relative flex items-center gap-1 shrink-0">
-                      {updateStatusMutation.isPending && 
-                       updateStatusMutation.variables?.id === app.id && (
-                        <RefreshCw className="h-3 w-3 text-slate-400 animate-spin" />
-                      )}
-                      <select
-                        value={appStatusKey}
-                        onChange={(e) => updateStatusMutation.mutate({ id: app.id, status: e.target.value })}
-                        className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border focus:outline-none focus:ring-2 cursor-pointer transition-all pr-1 bg-none ${STATUS_BADGES[appStatusKey] || "bg-slate-100"}`}
-                      >
-                        <option value="APPLIED">Applied</option>
-                        <option value="SCREENING">Screening</option>
-                        <option value="INTERVIEW">Interview</option>
-                        <option value="OFFER">Offer</option>
-                        <option value="REJECTED">Rejected</option>
-                      </select>
-                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[app.status]}`}>
+                      {app.status}
+                    </span>
                   </div>
 
-                  {app.location && (
-                    <p className="text-xs text-slate-500 flex items-center gap-1 line-clamp-1">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" /> {app.location}
+                  {nextUpcoming && (
+                    <div className={`p-2.5 rounded-lg border flex items-center gap-2 text-xs font-semibold ${
+                      isToday 
+                        ? 'bg-amber-50 text-amber-800 border-amber-100 animate-pulse' 
+                        : 'bg-slate-50 text-slate-600 border-slate-100'
+                    }`}>
+                      <CalendarClock className={`h-4 w-4 ${isToday ? 'text-amber-600' : 'text-slate-400'}`} />
+                      <span>
+                        {isToday ? `Interview today — ${nextUpcoming.time}` : `${countdownText} (${nextUpcoming.round})`}
+                      </span>
+                    </div>
+                  )}
+
+                  {app.notes && (
+                    <p className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 line-clamp-2">
+                      {app.notes}
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-5">
-                  {app.url ? (
-                    <a 
-                      href={app.url} target="_blank" rel="noreferrer"
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 group/link"
-                    >
-                      View Job Post <ExternalLink className="h-3 w-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                    </a>
-                  ) : (
-                    <span className="text-xs text-slate-400 italic">No listing URL provided</span>
-                  )}
-                  
-                  <button
-                    onClick={() => {
-                      if(confirm(`Remove tracking data for ${app.position} at ${app.company}?`)) {
-                        deleteMutation.mutate(app.id);
-                      }
-                    }}
-                    className="text-slate-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors"
-                    title="Delete job tracking block"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                <div className="flex items-center justify-between border-t mt-5 pt-4 text-xs text-slate-400">
+                  <span>Added {new Date(app.createdAt).toLocaleDateString()}</span>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Flush tracking row record?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove all associated processes for <strong className="text-slate-900 font-bold">{app.company}</strong> permanently.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMutation.mutate(app.id)} className="bg-red-600 hover:bg-red-700 text-white">
+                          Confirm Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             );
