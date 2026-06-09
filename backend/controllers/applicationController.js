@@ -2,14 +2,14 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // 1. GET ALL APPLICATIONS (Only for the logged-in user)
-const getApplications = async (req, res, next) => {
+const getApplications = async (req, res) => {
   try {
     const applications = await prisma.application.findMany({
-      where: { userId: req.user.userId } // Filtered tightly by the attached token ID
+      where: { userId: req.user.userId }
     });
-    res.status(200).json(applications);
+    res.json(applications);
   } catch (error) {
-    next(error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -96,67 +96,38 @@ const deleteApplication = async (req, res, next) => {
   }
 };
 
-const getApplicationStats = async (req, res, next) => {
+const getApplicationStats = async (req, res) => {
   try {
-    const userId = req.user.userId; 
-
-    // 1. Fetch all raw applications belonging to this authenticated user
     const applications = await prisma.application.findMany({
-      where: { userId }
+      where: { userId: req.user.userId }
     });
 
-    // 2. Compute live analytical counts for your stat cards matrix
-    const totalApplied = applications.length;
-    const inProgress = applications.filter(app => app.status === 'SCREENING' || app.status === 'INTERVIEW').length;
-    const offers = applications.filter(app => app.status === 'OFFER').length;
-    const rejected = applications.filter(app => app.status === 'REJECTED').length;
-    const upcomingInterviews = applications.filter(app => app.status === 'INTERVIEW').length;
+    // Generate accurate counts
+    const counts = {
+      APPLIED: applications.filter(a => a.status === 'APPLIED').length,
+      SCREENING: applications.filter(a => a.status === 'SCREENING').length,
+      INTERVIEW: applications.filter(a => a.status === 'INTERVIEW').length,
+      OFFER: applications.filter(a => a.status === 'OFFER').length,
+      REJECTED: applications.filter(a => a.status === 'REJECTED').length,
+    };
 
-    // 3. Structure Pipeline Breakdown array format required by your frontend BarChart
-    const byStatus = [
-      { name: 'Applied', count: applications.filter(app => app.status === 'APPLIED').length },
-      { name: 'Screening', count: applications.filter(app => app.status === 'SCREENING').length },
-      { name: 'Interview', count: upcomingInterviews },
-      { name: 'Offers', count: offers },
-      { name: 'Rejected', count: rejected },
-    ];
-
-    // 4. Group data chronologically by month for your high-density AreaChart trend line
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlyGroups = {};
-
-    applications.forEach(app => {
-      const date = app.appliedDate ? new Date(app.appliedDate) : new Date();
-      const monthName = months[date.getMonth()];
-      monthlyGroups[monthName] = (monthlyGroups[monthName] || 0) + 1;
+    res.json({
+      totalApplied: applications.length,
+      inProgress: counts.SCREENING + counts.INTERVIEW,
+      offers: counts.OFFER,
+      rejected: counts.REJECTED,
+      upcomingInterviews: counts.INTERVIEW, 
+      byStatus: [
+        { name: 'Applied', count: counts.APPLIED },
+        { name: 'Screening', count: counts.SCREENING },
+        { name: 'Interview', count: counts.INTERVIEW },
+        { name: 'Offers', count: counts.OFFER },
+        { name: 'Rejected', count: counts.REJECTED },
+      ],
+      monthlyTrends: [{ month: 'Current', count: applications.length }]
     });
-
-    // Format trends object mapping arrays safely for the Recharts engine data key properties
-    const monthlyTrends = Object.keys(monthlyGroups).map(month => ({
-      month,
-      count: monthlyGroups[month]
-    }));
-
-    // If the database timeline is clean but empty, send down stable coordinates so charts don't crash
-    const finalTrends = monthlyTrends.length > 0 ? monthlyTrends : [
-      { month: 'Apr', count: 0 },
-      { month: 'May', count: 0 },
-      { month: 'Jun', count: 0 }
-    ];
-
-    // 5. Transmit final unified JSON telemetry data structure back down to frontend useQuery hook
-    res.status(200).json({
-      totalApplied,
-      inProgress,
-      offers,
-      rejected,
-      upcomingInterviews,
-      byStatus,
-      monthlyTrends: finalTrends
-    });
-
   } catch (error) {
-    next(error);
+    res.status(500).json({ error: error.message });
   }
 };
 

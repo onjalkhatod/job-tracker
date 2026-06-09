@@ -4,14 +4,15 @@ import { PieChart, TrendingUp, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Analytics() {
-  const { data: stats, isLoading, isError } = useQuery({
-    queryKey: ['analyticsStats'],
+  // 1. Fetch the raw list of applications
+  const { data: applications, isLoading, isError } = useQuery({
+    queryKey: ['applications'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/applications/stats', {
+      const res = await axios.get('http://localhost:5000/api/applications', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return res.data;
+      return res.data; // This is an array of applications
     }
   });
 
@@ -25,15 +26,36 @@ export default function Analytics() {
   }
 
   if (isError) {
-    return <div className="p-8 text-center text-red-500">Error resolving analytics metrics parameters ledger.</div>;
+    return <div className="p-8 text-center text-red-500">Error resolving analytics metrics parameters.</div>;
   }
+
+  // 2. Derive analytics directly from the raw applications array.
+  // This ensures 100% accuracy based on the actual database records.
+  const total = applications?.length || 0;
+  
+  // Define statuses based on your database string values
+  const counts = {
+    APPLIED: applications?.filter(a => a.status === 'APPLIED').length || 0,
+    SCREENING: applications?.filter(a => a.status === 'SCREENING').length || 0,
+    INTERVIEW: applications?.filter(a => a.status === 'INTERVIEW').length || 0,
+    OFFER: applications?.filter(a => a.status === 'OFFER').length || 0,
+    REJECTED: applications?.filter(a => a.status === 'REJECTED').length || 0,
+  };
+
+  const distribution = [
+    { label: 'Applied Stage', count: counts.APPLIED, color: 'bg-blue-500' },
+    { label: 'Screening Routine', count: counts.SCREENING, color: 'bg-amber-500' },
+    { label: 'Interview Process', count: counts.INTERVIEW, color: 'bg-purple-500' },
+    { label: 'Offer Sheet Issued', count: counts.OFFER, color: 'bg-green-500' },
+    { label: 'Rejected Clearance', count: counts.REJECTED, color: 'bg-red-500' },
+  ];
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-200">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pipeline Analytics</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Detailed metrics, conversion ratios, and pipeline health parameters tracking metrics ledger.
+          Detailed metrics, conversion ratios, and pipeline health parameters.
         </p>
       </div>
 
@@ -45,15 +67,8 @@ export default function Analytics() {
             <h3 className="font-bold text-slate-900">Current Funnel Distribution</h3>
           </div>
           <div className="space-y-3">
-            {[
-              { label: 'Applied Stage', count: stats?.appliedCount || 0, color: 'bg-blue-500' },
-              { label: 'Screening Routine', count: stats?.screeningCount || 0, color: 'bg-amber-500' },
-              { label: 'Interview Process', count: stats?.interviewsCount || 0, color: 'bg-purple-500' },
-              { label: 'Offer Sheet Issued', count: stats?.offersCount || 0, color: 'bg-green-500' },
-              { label: 'Rejected Clearance', count: stats?.rejectedCount || 0, color: 'bg-red-500' },
-            ].map((row, idx) => {
-              const max = stats?.totalApplications || 1;
-              const pct = Math.round((row.count / max) * 100);
+            {distribution.map((row, idx) => {
+              const pct = total > 0 ? Math.round((row.count / total) * 100) : 0;
               return (
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold text-slate-700">
@@ -78,7 +93,7 @@ export default function Analytics() {
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
               Your tracking dashboard history loop shows that you currently have{' '}
-              <strong className="text-slate-900 font-semibold">{stats?.upcomingInterviews || 0} interviews</strong> scheduled. Keep pushing!
+              <strong className="text-slate-900 font-semibold">{counts.INTERVIEW} interviews</strong> scheduled. Keep pushing!
             </p>
           </div>
           <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg flex items-start gap-2.5 text-xs text-slate-500 mt-4">

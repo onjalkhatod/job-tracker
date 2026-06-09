@@ -1,14 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
+import { useAuth } from '@/context/AuthContext'; 
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth(); 
   const [serverError, setServerError] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // Instantiate the React Hook Form core tracker engine
   const {
@@ -36,15 +44,18 @@ export default function Register() {
     mutation.mutate(data);
   };
 
+  // Prevent rendering markup layout flash if the user is being forwarded
+  if (isAuthenticated) return null;
+
   return (
-    <div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-slate-200 bg-white p-12 shadow-sm max-w-md mx-auto mt-16 animate-in fade-in duration-200">
+    <div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-slate-200 bg-white p-12 shadow-sm max-w-md mx-auto mt-16 animate-in fade-in duration-200 w-full sm:w-auto px-4 sm:px-12">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an Account</h2>
         <p className="text-sm text-slate-500 mt-1">Get started tracking your career opportunities</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
-        {/* Full Name Input Parameter Entry Field Row */}
+        {}
         <div>
           <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1">Full Name</label>
           <Input
@@ -70,7 +81,7 @@ export default function Register() {
             {...register('email', { 
               required: 'Email mapping signature criteria is required.',
               pattern: {
-                value: /^[A-Z0-BA-z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                 message: 'Invalid email specification formatting address structural map.'
               }
             })}

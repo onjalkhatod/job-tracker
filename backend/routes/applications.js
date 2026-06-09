@@ -3,7 +3,8 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const verifyToken = require('../middleware/auth');
-const { createInterview, getApplicationInterviews } = require('../controllers/interviewController');  
+const interviewController = require('../controllers/interviewController');
+const { createInterview, getApplicationInterviews } = interviewController;
 const { 
   getApplications, 
   createApplication, 
@@ -52,6 +53,6 @@ router.delete('/:id', verifyToken, deleteApplication);
 
 // 6. Nested tracks for interview logs
 router.post('/:applicationId/interviews', verifyToken, createInterview);
-router.get('/:applicationId/interviews', verifyToken, getApplicationInterviews);
+router.get('/:applicationId/interviews', verifyToken, getApplicationInterviews);;
 
 module.exports = router;

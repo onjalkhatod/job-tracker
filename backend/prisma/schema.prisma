@@ -49,7 +49,7 @@ model Interview {
   round         String      
   format        String      
   notes         String?     // 🛠️ ADD THIS LINE
-  location      String?     
+  location      String?       
   completed     Boolean     @default(false)
   createdAt     DateTime    @default(now())
 }

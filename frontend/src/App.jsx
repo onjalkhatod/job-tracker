@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'sonner'; 
 import Navbar from '@/components/Navbar';
@@ -9,7 +9,17 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Applications from '@/pages/Applications';
 import Analytics from '@/pages/Analytics'; 
-import ApplicationDetail from '@/pages/ApplicationDetail'; 
+import ApplicationDetail from '@/pages/ApplicationDetail';
+import Landing from "@/pages/Landing";
+
+function MainLayout() {
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <Navbar />
+      <Outlet /> {/* Renders the inner child components smoothly */}
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -17,15 +27,18 @@ export default function App() {
       <Toaster position="top-right" richColors closeButton />
 
       <BrowserRouter>
-        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-          <Navbar />
-          
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Routes>
+          {/* 1. Raw Authentication Routes: Completely free of the Navbar */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/applications/:id" element={<ApplicationDetail />} />
 
+          {/* 2. Public & Protected Application Views: Natively includes the Navbar */}
+          <Route element={<MainLayout />}>
+            {/* Public Landing Entrance */}
+            <Route path="/" element={<Landing />} />
+
+            {/* Guarded Internal Paths */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DashboardLayout>
@@ -42,7 +55,6 @@ export default function App() {
               </ProtectedRoute>
             } />
 
-            {/* ➕ 2. Register the dynamic dynamic parameter matcher layout engine here */}
             <Route path="/applications/:id" element={
               <ProtectedRoute>
                 <DashboardLayout>
@@ -58,8 +70,8 @@ export default function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-          </Routes>
-        </div>
+          </Route>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

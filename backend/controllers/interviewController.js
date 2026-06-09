@@ -117,21 +117,21 @@ const getUpcomingInterviews = async (req, res, next) => {
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(now.getDate() + 7);
 
+    // 1. Get ALL upcoming interviews (Fail-safe)
     const upcoming = await prisma.interview.findMany({
       where: {
         completed: false,
-        date: {
-          gte: now,
-          lte: sevenDaysFromNow
-        }
+        date: { gte: now, lte: sevenDaysFromNow }
       },
-      include: {
-        application: true 
-      },
+      include: { application: true },
       orderBy: { date: 'asc' }
     });
 
-    res.status(200).json(upcoming);
+    // 2. Filter manually to ensure isolation by user
+    // We only return records where the application exists and matches the current user
+    const filtered = upcoming.filter(i => i.application && i.application.userId === req.user?.id);
+
+    res.status(200).json(filtered);
   } catch (error) {
     next(error);
   }

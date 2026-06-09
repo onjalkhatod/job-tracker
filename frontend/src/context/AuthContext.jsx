@@ -34,10 +34,14 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // 1. Clear out user trace keys completely
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    
+    // 2. Hard-steer the browser window back to your clean root path
+    window.location.href = '/'; 
   };
 
   // Guard rails: Ensure BOTH token and user profile structures are validated before granting access

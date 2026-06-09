@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
@@ -8,18 +8,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [serverError, setServerError] = useState('');
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // 🛠️ COMBINED INTO ONE SINGLE USEFORM HOOK
+  const { 
+    register, 
+    handleSubmit, 
+    setValue, 
+    formState: { errors } 
   } = useForm({
-    defaultValues: { email: '', password: '' },
-    mode: 'onTouched'
+    defaultValues: {
+      email: "",
+      password: ""
+    },
+    mode: 'onTouched' // Keeps your real-time touch validation alive!
   });
+  
+  useEffect(() => {
+    if (searchParams.get("demo") === "true") {
+      // Set your configured seed database demo credentials
+      setValue("email", "demo@jobtracker.com");
+      setValue("password", "demo123456");
+    }
+  }, [searchParams, setValue]);
 
   const mutation = useMutation({
     mutationFn: api.auth.login,
@@ -52,7 +72,7 @@ export default function Login() {
       <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
         <div>
           <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1">Email Address</label>
-          <Input
+          <Input  
             type="email"
             placeholder="name@company.com"
             className={errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}

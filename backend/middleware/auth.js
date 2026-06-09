@@ -1,30 +1,27 @@
 const jwt = require('jsonwebtoken');
 
-const verifyToken = (req, res, next) => {
-  // 1. Get the token from the Authorization header
-  const authHeader = req.headers['authorization'];
-  
-  // Headers usually arrive as "Bearer <token>", so we split by space and grab the second part
-  const token = authHeader && authHeader.split(' ')[1];
-
-  // 2. If no token is provided, block them immediately
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
-  }
-
+const authMiddleware = (req, res, next) => {
   try {
-    // 3. Verify the token using your secret master key
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Access denied. Missing auth session token header parameters.' });
+    }
+
+    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // 4. Attach the decoded user data (id and email) to the request object
-    req.user = decoded;
-    
-    // 5. Pass control to the next function (the controller)
+
+    // 🎯 UNIVERSAL DATA PASS MATCHING:
+    // Binds both common naming formats simultaneously onto the request context object
+    req.user = {
+      ...decoded,
+      id: decoded.userId || decoded.id,
+      userId: decoded.userId || decoded.id
+    };
+
     next();
   } catch (error) {
-    // If token is expired or altered, reject it
-    return res.status(401).json({ error: 'Invalid or expired token.' });
+    return res.status(401).json({ error: 'Session handshake invalid or security token expired.' });
   }
 };
 
-module.exports = verifyToken;
+module.exports = authMiddleware;  
