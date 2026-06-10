@@ -4,12 +4,17 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import tailwindcss from "@tailwindcss/vite"
 
-// Reconstruct __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(), 
+    tailwindcss({
+      // This tells Tailwind to look for the 'dark' class on the HTML element
+      darkMode: ['class'],
+    })
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

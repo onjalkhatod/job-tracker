@@ -55,4 +55,4 @@ router.delete('/:id', verifyToken, deleteApplication);
 router.post('/:applicationId/interviews', verifyToken, createInterview);
 router.get('/:applicationId/interviews', verifyToken, getApplicationInterviews);;
 
-module.exports = router;
+module.exports = router;  

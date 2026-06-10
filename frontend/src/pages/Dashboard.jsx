@@ -7,7 +7,7 @@ import { getCountdown } from '../utils/dateHelpers';
 
 const Dashboard = () => {
   // 1. Fetch analytical telemetry from backend stats portal
-  const { data: stats, isLoading, isError, refetch } = useQuery({
+const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['applicationStats'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
@@ -22,9 +22,7 @@ const Dashboard = () => {
         throw new Error('Failed to fetch dashboard intelligence diagnostics');
       }
 
-      const rawData = await response.json();
-      console.log("=== RAW BACKEND PAYLOAD REVEALED ===", rawData);
-      return rawData;
+      return response.json();
     },
   });
 
