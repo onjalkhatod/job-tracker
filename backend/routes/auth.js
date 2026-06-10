@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { register, login } = require('../controllers/authController');
+const rateLimit = require('express-rate-limit');
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each IP to 10 requests per windowMs
+    message: { error: "Too many attempts, please try again after 15 minutes." }
+});
 // Validation helper middleware
 const validateFields = (req, res, next) => {
   const errors = validationResult(req);
@@ -20,9 +26,10 @@ router.post(
     body('name').notEmpty().withMessage('Name is required.')
   ],
   validateFields,
+  authLimiter,
   register
 );
 
-router.post('/login', login);
+router.post('/login', authLimiter, login);
 
 module.exports = router;

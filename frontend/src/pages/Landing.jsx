@@ -43,7 +43,7 @@ export default function Landing() {
         <Button 
           onClick={handleViewDemo} 
           variant="outline" 
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto dark:text-slate-100" //
         >
           View Demo
         </Button>
