@@ -11,7 +11,6 @@ export default defineConfig({
   plugins: [
     react(), 
     tailwindcss({
-      // This tells Tailwind to look for the 'dark' class on the HTML element
       darkMode: ['class'],
     })
   ],

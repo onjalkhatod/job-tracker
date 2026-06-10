@@ -11,6 +11,7 @@ import Applications from '@/pages/Applications';
 import Analytics from '@/pages/Analytics'; 
 import ApplicationDetail from '@/pages/ApplicationDetail';
 import Landing from "@/pages/Landing";
+import { ThemeProvider } from './components/theme-provider';
 
 function MainLayout() {
   return (
@@ -25,7 +26,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Toaster position="top-right" richColors closeButton />
-
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <BrowserRouter>
         <Routes>
           {/* 1. Raw Authentication Routes: Completely free of the Navbar */}
@@ -73,6 +74,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

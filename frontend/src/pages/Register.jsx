@@ -47,37 +47,35 @@ export default function Register() {
   // Prevent rendering markup layout flash if the user is being forwarded
   if (isAuthenticated) return null;
 
-  return (
-    <div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-slate-200 bg-white p-12 shadow-sm max-w-md mx-auto mt-16 animate-in fade-in duration-200 w-full sm:w-auto px-4 sm:px-12">
+return (
+    <div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-border bg-card p-12 shadow-sm max-w-md mx-auto mt-16 transition-colors duration-300 animate-in fade-in duration-200 w-full sm:w-auto px-4 sm:px-12">
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an Account</h2>
-        <p className="text-sm text-slate-500 mt-1">Get started tracking your career opportunities</p>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Create an Account</h2>
+        <p className="text-sm text-muted-foreground mt-1">Get started tracking your career opportunities</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
-        {}
         <div>
-          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1">Full Name</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Full Name</label>
           <Input
             type="text"
             placeholder="John Doe"
-            className={errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
+            className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
             {...register('name', { 
               required: 'Full Name profile property criteria is required.' 
             })}
           />
           {errors.name && (
-            <p className="text-xs font-medium text-red-500 mt-1">⚠️ {errors.name.message}</p>
+            <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.name.message}</p>
           )}
         </div>
 
-        {/* Email Address Input Parameter Entry Field Row */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1">Email Address</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Email Address</label>
           <Input
             type="email"
             placeholder="name@company.com"
-            className={errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
+            className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
             {...register('email', { 
               required: 'Email mapping signature criteria is required.',
               pattern: {
@@ -87,17 +85,16 @@ export default function Register() {
             })}
           />
           {errors.email && (
-            <p className="text-xs font-medium text-red-500 mt-1">⚠️ {errors.email.message}</p>
+            <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.email.message}</p>
           )}
         </div>
 
-        {/* Security Password Input Parameter Entry Field Row */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1">Password</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Password</label>
           <Input
             type="password"
             placeholder="••••••••"
-            className={errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
+            className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
             {...register('password', { 
               required: 'Security pass phrase registration parameters are required.',
               minLength: {
@@ -107,13 +104,12 @@ export default function Register() {
             })}
           />
           {errors.password && (
-            <p className="text-xs font-medium text-red-500 mt-1">⚠️ {errors.password.message}</p>
+            <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.password.message}</p>
           )}
         </div>
 
-        {/* Async Server Exception Error Reporting Container */}
         {serverError && (
-          <div className="rounded-md bg-red-50 p-2.5 text-xs text-red-600 font-medium border border-red-100">
+          <div className="rounded-md bg-destructive/10 p-2.5 text-xs text-destructive font-medium border border-destructive/20">
             🛑 {serverError}
           </div>
         )}
@@ -121,15 +117,15 @@ export default function Register() {
         <Button 
           type="submit" 
           disabled={mutation.isPending}
-          className="w-full bg-slate-900 text-white hover:bg-slate-800 transition-colors mt-2"
+          className="w-full mt-2"
         >
           {mutation.isPending ? 'Processing Registration Engine...' : 'Register Profile'}
         </Button>
       </form>
 
-      <p className="text-xs text-slate-500 text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Already have an account?{' '}
-        <Link to="/login" className="text-slate-900 font-semibold hover:underline">
+        <Link to="/login" className="text-foreground font-semibold hover:underline">
           Sign In
         </Link>
       </p>

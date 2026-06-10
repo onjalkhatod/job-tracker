@@ -100,21 +100,21 @@ export default function ApplicationForm({ application, onClose }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-2 max-h-[80vh] overflow-y-auto">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Company</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Company</label>
           <Input {...register('company', { required: 'Required field' })} />
-          {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company.message}</p>}
+          {errors.company && <p className="text-xs text-destructive mt-1">{errors.company.message}</p>}
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Role Title</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Role Title</label>
           <Input {...register('role', { required: 'Required field' })} />
-          {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role.message}</p>}
+          {errors.role && <p className="text-xs text-destructive mt-1">{errors.role.message}</p>}
         </div>
       </div>
 
       <div>
-        <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Pipeline Progress Status</label>
+        <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Pipeline Progress Status</label>
         <Select defaultValue={currentStatus} onValueChange={(val) => setValue('status', val, { shouldValidate: true })}>
-          <SelectTrigger className="w-full bg-white border-slate-200">
+          <SelectTrigger className="w-full bg-background">
             <SelectValue placeholder="Select current phase" />
           </SelectTrigger>
           <SelectContent>
@@ -128,17 +128,17 @@ export default function ApplicationForm({ application, onClose }) {
       </div>
 
       {showInterviewSection && (
-        <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between border-b pb-2">
-            <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-              <CalendarDays className="h-4 w-4 text-purple-600" />
+        <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center gap-2 text-foreground font-bold text-sm">
+              <CalendarDays className="h-4 w-4 text-primary" />
               <span>Schedule Stage Rounds</span>
             </div>
             <Button 
               type="button" 
               variant="outline" 
               size="sm" 
-              className="h-7 bg-white text-xs gap-1 border-slate-200"
+              className="h-7 text-xs gap-1"
               onClick={() => append({ date: '', time: '', round: 'TECHNICAL', format: 'ONLINE', location: '' })}
             >
               <Plus className="h-3 w-3" /> Add Round
@@ -146,23 +146,23 @@ export default function ApplicationForm({ application, onClose }) {
           </div>
 
           {fields.map((field, index) => (
-            <div key={field.id} className="p-3 bg-white border border-slate-200 rounded-lg space-y-3 relative group">
+            <div key={field.id} className="p-3 bg-card border border-border rounded-lg space-y-3 relative group">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Date</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Date</label>
                   <Input type="date" className="h-8 text-xs" {...register(`interviews.${index}.date`, { required: true })} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Time</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Time</label>
                   <Input type="text" placeholder="e.g. 2:00 PM" className="h-8 text-xs" {...register(`interviews.${index}.time`, { required: true })} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Round Type</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Round Type</label>
                   <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm focus:outline-none"
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none"
                     {...register(`interviews.${index}.round`)}
                   >
                     <option value="TECHNICAL">Technical Round</option>
@@ -172,9 +172,9 @@ export default function ApplicationForm({ application, onClose }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Format</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Format</label>
                   <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-xs shadow-sm focus:outline-none"
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none"
                     {...register(`interviews.${index}.format`)}
                   >
                     <option value="ONLINE">Online (Zoom/Meet)</option>
@@ -185,7 +185,7 @@ export default function ApplicationForm({ application, onClose }) {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Location / Link (Optional)</label>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Location / Link (Optional)</label>
                 <Input type="text" placeholder="Zoom Link or Room address" className="h-8 text-xs" {...register(`interviews.${index}.location`)} />
               </div>
 
@@ -193,7 +193,7 @@ export default function ApplicationForm({ application, onClose }) {
                 <Button 
                   type="button" 
                   variant="ghost" 
-                  className="absolute right-2 top-2 h-7 w-7 p-0 text-slate-400 hover:text-red-600 rounded-md"
+                  className="absolute right-2 top-2 h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded-md"
                   onClick={() => remove(index)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -205,16 +205,16 @@ export default function ApplicationForm({ application, onClose }) {
       )}
 
       <div>
-        <label className="text-xs font-bold text-slate-600 uppercase block mb-1">Additional Notes</label>
+        <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Additional Notes</label>
         <textarea 
-          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           {...register('notes')} 
         />
       </div>
 
-      <div className="flex justify-end gap-2 border-t pt-4">
+      <div className="flex justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" className="bg-slate-900 text-white hover:bg-slate-800" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving changes...' : isEditing ? 'Update Application' : 'Save Tracked Entry'}
         </Button>
       </div>

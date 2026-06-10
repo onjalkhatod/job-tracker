@@ -4,11 +4,9 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { getCountdown } from '@/lib/dateUtils';
-
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-// ➕ Added Dialog imports for our input form layout modal container
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -132,21 +130,22 @@ export default function Applications() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-200">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen bg-background text-foreground transition-colors duration-300">
+      
       {/* Action Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Tracked Roles</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Tracked Roles</h1>
           <p className="text-muted-foreground mt-1">Refine and filter your ongoing opportunities.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-stretch sm:items-center">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search companies..."
-              className="pl-9 bg-white"
+              className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -154,9 +153,9 @@ export default function Applications() {
 
           <div className="w-full sm:w-44">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="bg-white">
+              <SelectTrigger>
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-slate-400" />
+                  <Filter className="h-4 w-4 text-muted-foreground" />
                   <SelectValue placeholder="Filter by status" />
                 </div>
               </SelectTrigger>
@@ -171,10 +170,9 @@ export default function Applications() {
             </Select>
           </div>
 
-          {/* ➕ Mounted Add Application Trigger Button Element */}
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-1.5 shadow-sm shadow-slate-900/10"
+            className="font-semibold flex items-center gap-1.5"
           >
             <Plus className="h-4 w-4 stroke-[3]" />
             Add Application
@@ -183,9 +181,9 @@ export default function Applications() {
       </div>
 
       {filteredApplications.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed rounded-xl bg-slate-50/50">
-          <Briefcase className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-700">No matching items resolved</h3>
+        <div className="text-center py-16 border-2 border-dashed border-border rounded-xl bg-muted/30">
+          <Briefcase className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <h3 className="font-bold text-foreground">No matching items resolved</h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -199,20 +197,20 @@ export default function Applications() {
             return (
               <div 
                 key={app.id} 
-                className={`group border rounded-xl p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
-                  isToday ? 'border-l-4 border-l-amber-500' : 'border-slate-200/80'
+                className={`group border border-border rounded-xl p-5 bg-card shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
+                  isToday ? 'border-l-4 border-l-amber-500' : ''
                 }`}
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-1.5">
+                      <h3 className="font-bold text-xl text-card-foreground tracking-tight flex items-center gap-1.5">
                         {app.company}
-                        <Link to={`/applications/${app.id}`} className="text-slate-400 hover:text-slate-900 transition-colors">
+                        <Link to={`/applications/${app.id}`} className="text-muted-foreground hover:text-foreground transition-colors">
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Link>
                       </h3>
-                      <p className="text-slate-500 font-semibold text-sm mt-0.5">{app.role}</p>
+                      <p className="text-muted-foreground font-semibold text-sm mt-0.5">{app.role}</p>
                     </div>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[app.status]}`}>
                       {app.status}
@@ -222,10 +220,10 @@ export default function Applications() {
                   {nextUpcoming && (
                     <div className={`p-2.5 rounded-lg border flex items-center gap-2 text-xs font-semibold ${
                       isToday 
-                        ? 'bg-amber-50 text-amber-800 border-amber-100 animate-pulse' 
-                        : 'bg-slate-50 text-slate-600 border-slate-100'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border-amber-100 dark:border-amber-800 animate-pulse' 
+                        : 'bg-muted text-muted-foreground border-border'
                     }`}>
-                      <CalendarClock className={`h-4 w-4 ${isToday ? 'text-amber-600' : 'text-slate-400'}`} />
+                      <CalendarClock className={`h-4 w-4 ${isToday ? 'text-amber-600' : 'text-muted-foreground'}`} />
                       <span>
                         {isToday ? `Interview today — ${nextUpcoming.time}` : `${countdownText} (${nextUpcoming.round})`}
                       </span>
@@ -233,18 +231,18 @@ export default function Applications() {
                   )}
 
                   {app.notes && (
-                    <p className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 line-clamp-2">
+                    <p className="text-sm text-muted-foreground bg-muted p-2.5 rounded-lg border border-border line-clamp-2">
                       {app.notes}
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between border-t mt-5 pt-4 text-xs text-slate-400">
+                <div className="flex items-center justify-between border-t border-border mt-5 pt-4 text-xs text-muted-foreground">
                   <span>Added {new Date(app.createdAt).toLocaleDateString()}</span>
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -252,12 +250,12 @@ export default function Applications() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Flush tracking row record?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will remove all associated processes for <strong className="text-slate-900 font-bold">{app.company}</strong> permanently.
+                          This will remove all associated processes for <strong className="font-bold">{app.company}</strong> permanently.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteMutation.mutate(app.id)} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={() => deleteMutation.mutate(app.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                           Confirm Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -270,18 +268,18 @@ export default function Applications() {
         </div>
       )}
 
-      {/* ➕ Integrated Shadow Form Capture Dialog Shell */}
+      {/* Integrated Shadow Form Capture Dialog Shell */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="font-bold text-xl text-slate-900">Track New Position</DialogTitle>
+            <DialogTitle className="font-bold text-xl text-foreground">Track New Position</DialogTitle>
             <DialogDescription>
               Register ongoing employment metrics to aggregate pipeline charting.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Company Identity</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Company Identity</label>
               <Input 
                 type="text" 
                 placeholder="e.g. Stripe, Google" 
@@ -290,7 +288,7 @@ export default function Applications() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Role Title</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Role Title</label>
               <Input 
                 type="text" 
                 placeholder="e.g. Frontend Engineer" 
@@ -299,12 +297,12 @@ export default function Applications() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Pipeline Stage Status</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pipeline Stage Status</label>
               <Select 
                 value={formData.status} 
                 onValueChange={(val) => setFormData({...formData, status: val})}
               >
-                <SelectTrigger className="bg-white">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -317,7 +315,7 @@ export default function Applications() {
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Context Notes (Optional)</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Context Notes (Optional)</label>
               <Input 
                 type="text" 
                 placeholder="Salary, tech stack, or points of interest..." 
@@ -325,11 +323,11 @@ export default function Applications() {
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
               />
             </div>
-            <DialogFooter className="pt-4 border-t gap-2 sm:gap-0">
+            <DialogFooter className="pt-4 border-t border-border gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Dismiss
               </Button>
-              <Button type="submit" disabled={createMutation.isPending} className="bg-slate-900 text-white hover:bg-slate-800">
+              <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Logging data...' : 'Commit Position'}
               </Button>
             </DialogFooter>

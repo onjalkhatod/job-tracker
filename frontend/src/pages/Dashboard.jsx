@@ -7,7 +7,7 @@ import { getCountdown } from '../utils/dateHelpers';
 
 const Dashboard = () => {
   // 1. Fetch analytical telemetry from backend stats portal
-const { data: stats, isLoading, isError, refetch } = useQuery({
+  const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['applicationStats'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
@@ -45,8 +45,8 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
   if (isLoading) {
     return (
       <div className="flex h-96 w-full items-center justify-center space-x-2">
-        <RefreshCw className="h-6 w-6 animate-spin text-slate-900" />
-        <span className="text-sm font-medium text-slate-500">Resolving database metrics...</span>
+        <RefreshCw className="h-6 w-6 animate-spin text-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">Resolving database metrics...</span>
       </div>
     );
   }
@@ -59,8 +59,8 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
           <AlertTriangle className="h-6 w-6" />
         </div>
         <div className="max-w-md">
-          <h3 className="text-lg font-semibold text-slate-900">Failed to synchronize metrics</h3>
-          <p className="mt-1 text-sm text-slate-500">
+          <h3 className="text-lg font-semibold text-foreground">Failed to synchronize metrics</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Ensure your local Express database environment is online and your user authentication token session is valid.
           </p>
         </div>
@@ -82,11 +82,11 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
   const upcomingCount = stats?.upcomingInterviews ?? 0;
 
   const statusData = [
-    { name: 'Applied', count: stats.byStatus.find(s => s.name.toUpperCase() === 'APPLIED')?.count || 0 },
-    { name: 'Screening', count: stats.byStatus.find(s => s.name.toUpperCase() === 'SCREENING')?.count || 0 },
-    { name: 'Interview', count: stats.byStatus.find(s => s.name.toUpperCase() === 'INTERVIEW')?.count || 0 },
-    { name: 'Offers', count: stats.byStatus.find(s => s.name.toUpperCase() === 'OFFER')?.count || 0 },
-    { name: 'Rejected', count: stats.byStatus.find(s => s.name.toUpperCase() === 'REJECTED')?.count || 0 },
+    { name: 'Applied', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'APPLIED')?.count || 0 },
+    { name: 'Screening', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'SCREENING')?.count || 0 },
+    { name: 'Interview', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'INTERVIEW')?.count || 0 },
+    { name: 'Offers', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'OFFER')?.count || 0 },
+    { name: 'Rejected', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'REJECTED')?.count || 0 },
   ];
 
   const chronologicalData = stats?.monthlyTrends && stats.monthlyTrends.length > 0 
@@ -100,19 +100,19 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
       ];
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 p-6 max-w-7xl mx-auto w-full bg-background min-h-screen text-foreground transition-colors duration-300">
       
       {/* 1. Amber Banner Strip */}
       {todayInterviews.length > 0 && !dismissed && (
-        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 px-4 py-3 rounded-lg shadow-sm">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
             <span className="text-sm font-medium">
               Today: {todayInterviews[0].application.company} ({todayInterviews[0].application.role}) 
               at {new Date(todayInterviews[0].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
-          <button onClick={() => setDismissed(true)} className="text-amber-700 hover:text-amber-900">
+          <button onClick={() => setDismissed(true)} className="text-amber-700 dark:text-amber-300 hover:text-amber-900">
             <XCircle className="h-5 w-5" />
           </button>
         </div>
@@ -120,70 +120,87 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
 
       {/* Header Block */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Real-time analytical telemetry tracking aggregate recruitment loops.
         </p>
       </div>
 
       {/* Grid Stat Matrix Card Panel */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 w-full">
-        <div className={`rounded-xl border bg-white p-6 shadow-sm transition-opacity duration-200 ${totalApplied === 0 ? 'opacity-60' : 'opacity-100'}`}>
+        <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${totalApplied === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Applied</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Applied</p>
             <Briefcase className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-slate-900">{totalApplied}</span></div>
+          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-foreground">{totalApplied}</span></div>
         </div>
 
-        <div className={`rounded-xl border bg-white p-6 shadow-sm transition-opacity duration-200 ${inProgress === 0 ? 'opacity-60' : 'opacity-100'}`}>
+        <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${inProgress === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">In Progress</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">In Progress</p>
             <Activity className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-slate-900">{inProgress}</span></div>
+          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-foreground">{inProgress}</span></div>
         </div>
 
-        <div className={`rounded-xl border bg-white p-6 shadow-sm transition-opacity duration-200 ${offers === 0 ? 'opacity-60' : 'opacity-100'}`}>
+        <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${offers === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Offers Secured</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Offers Secured</p>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </div>
-          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-slate-900">{offers}</span></div>
+          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-foreground">{offers}</span></div>
         </div>
 
-        <div className={`rounded-xl border bg-white p-6 shadow-sm transition-opacity duration-200 ${rejected === 0 ? 'opacity-60' : 'opacity-100'}`}>
+        <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${rejected === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Rejections</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rejections</p>
             <XCircle className="h-4 w-4 text-red-500" />
           </div>
-          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-slate-900">{rejected}</span></div>
+          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-foreground">{rejected}</span></div>
         </div>
 
-        <div className={`rounded-xl border p-6 shadow-sm transition-all duration-200 ${upcomingCount === 0 ? 'border-slate-200 bg-white opacity-60' : 'border-amber-200 bg-amber-50/70 text-amber-900 ring-2 ring-amber-500/10'}`}>
+        <div className={`rounded-xl border p-6 shadow-sm transition-all duration-200 ${upcomingCount === 0 ? 'border-border bg-card opacity-60' : 'border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100 ring-2 ring-amber-500/10'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">Interviews Upcoming</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">Interviews Upcoming</p>
             <Calendar className="h-4 w-4 text-amber-600" />
           </div>
-          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-slate-900">{upcomingCount}</span></div>
+          <div className="mt-2"><span className="text-3xl font-bold tracking-tight text-foreground">{upcomingCount}</span></div>
         </div>
       </div>
 
       {/* Dual Visual Analytics Charting Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-slate-900">Pipeline Breakdown</h3>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-foreground">Pipeline Breakdown</h3>
           <div className="h-72 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={statusData}><XAxis dataKey="name" /><YAxis /><Tooltip /><Bar dataKey="count" fill="#2563eb" /></BarChart>
+              <BarChart data={statusData}>
+                <XAxis dataKey="name" stroke="currentColor" className="text-muted-foreground" />
+                <YAxis stroke="currentColor" className="text-muted-foreground" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                  itemStyle={{ color: 'hsl(var(--foreground))' }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--primary))" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-slate-900">Acquisition Over Time</h3>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-foreground">Acquisition Over Time</h3>
           <div className="h-72 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chronologicalData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis /><Tooltip /><Area type="monotone" dataKey="count" fill="#a855f7" /></AreaChart>
+              <AreaChart data={chronologicalData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="month" stroke="currentColor" className="text-muted-foreground" />
+                <YAxis stroke="currentColor" className="text-muted-foreground" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                  itemStyle={{ color: 'hsl(var(--foreground))' }}
+                />
+                <Area type="monotone" dataKey="count" fill="hsl(var(--primary))" stroke="hsl(var(--primary))" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -191,21 +208,21 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
 
       {/* Upcoming Interviews Section */}
       <div className="mt-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Interviews (Next 7 Days)</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Upcoming Interviews (Next 7 Days)</h3>
         {upcomingInterviews.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingInterviews.map((i) => (
-              <div key={i.id} className="p-4 border rounded-xl bg-white shadow-sm">
+              <div key={i.id} className="p-4 border border-border rounded-xl bg-card shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="font-semibold">{i.application.company}</p>
-                    <p className="text-sm text-slate-600">{i.application.role}</p>
+                    <p className="font-semibold text-foreground">{i.application.company}</p>
+                    <p className="text-sm text-muted-foreground">{i.application.role}</p>
                   </div>
-                  <span className="text-xs bg-slate-100 px-2 py-1 rounded">
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded font-medium">
                     {getCountdown(i.date)}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 mt-2 space-y-1">
+                <div className="text-xs text-muted-foreground mt-2 space-y-1">
                   <p>Round: {i.round}</p>
                   <p>Format: {i.format}</p>
                   <p>Time: {new Date(i.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
@@ -214,7 +231,7 @@ const { data: stats, isLoading, isError, refetch } = useQuery({
             ))}
           </div>
         ) : (
-          <p className="text-slate-500 text-sm italic">No interviews scheduled in the next 7 days.</p>
+          <p className="text-muted-foreground text-sm italic">No interviews scheduled in the next 7 days.</p>
         )}
       </div>
     </div>

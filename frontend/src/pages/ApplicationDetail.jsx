@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Calendar, Building2, Briefcase, FileText, Plus, CheckCircle2, Clock, ChevronLeft, Circle, Trash2 } from 'lucide-react';
+import { Calendar, Building2, Briefcase, FileText, CheckCircle2, Clock, ChevronLeft, Circle, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -114,39 +114,39 @@ const handleInterviewSubmit = (e) => {
   addInterviewMutation.mutate(payload);
 };
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
+    <div className="p-8 max-w-6xl mx-auto space-y-6 min-h-screen bg-background text-foreground transition-colors duration-300 animate-in fade-in duration-200">
       
       <Button 
         variant="ghost" 
         onClick={() => navigate('/applications')}
-        className="text-slate-500 hover:text-slate-900 -ml-3 flex items-center gap-1"
+        className="text-muted-foreground hover:text-foreground -ml-3 flex items-center gap-1"
       >
         <ChevronLeft className="h-4 w-4" /> Back to Tracked Roles
       </Button>
 
-      {/* 🎯 NEW: 4-Step Visual Timeline */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex justify-between items-center">
+      {/* 4-Step Visual Timeline */}
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex justify-between items-center">
         {STATUS_STEPS.map((step, index) => (
           <div key={step} className="flex flex-col items-center flex-1">
-            <div className={`p-2 rounded-full ${index <= currentStepIndex ? 'text-green-600' : 'text-slate-300'}`}>
+            <div className={`p-2 rounded-full ${index <= currentStepIndex ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
               {index <= currentStepIndex ? <CheckCircle2 className="h-6 w-6" /> : <Circle className="h-6 w-6" />}
             </div>
-            <span className="text-xs mt-2 font-bold uppercase tracking-wider">{step}</span>
+            <span className="text-xs mt-2 font-bold uppercase tracking-wider text-muted-foreground">{step}</span>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Building2 className="h-6 w-6 text-slate-700" />
-                <h1 className="text-2xl font-black text-slate-900">{app.company}</h1>
+                <Building2 className="h-6 w-6 text-muted-foreground" />
+                <h1 className="text-2xl font-black text-foreground">{app.company}</h1>
               </div>
               <div className="w-36">
                 <Select value={app.status} onValueChange={(newStatus) => updateAppMutation.mutate({ status: newStatus })}>
-                  <SelectTrigger className="w-full bg-slate-50 font-semibold border-slate-200">
+                  <SelectTrigger className="w-full bg-background font-semibold">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -161,21 +161,20 @@ const handleInterviewSubmit = (e) => {
             </div>
 
             <div className="pt-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Role Title</label>
-              <p className="font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                <Briefcase className="h-4 w-4 text-slate-400" /> {app.role}
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Role Title</label>
+              <p className="font-semibold text-foreground flex items-center gap-1.5 mt-0.5">
+                <Briefcase className="h-4 w-4 text-muted-foreground" /> {app.role}
               </p>
             </div>
             
-            {/* 🎯 NEW: Formatted Last Updated Date */}
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Last updated: {formattedDate}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last updated: {formattedDate}</p>
 
-            <div className="pt-4 border-t space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+            <div className="pt-4 border-t border-border space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5" /> Core Tracking Context Notes
               </label>
               <textarea
-                className="w-full min-h-[100px] border border-slate-200 rounded-lg p-3 text-sm text-slate-700 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition-all resize-none"
+                className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
                 placeholder="Type compensation targets, interviewer names, or application metrics. Click outside the box to auto-save."
                 defaultValue={app.notes || ''}
                 onBlur={(e) => updateAppMutation.mutate({ notes: e.target.value })}
@@ -183,44 +182,34 @@ const handleInterviewSubmit = (e) => {
             </div>
           </div>
           
-          {/* ... [Rest of your existing Interview Pipeline UI code here] ... */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-slate-500" /> Scheduled Stages Pipeline
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-muted-foreground" /> Scheduled Stages Pipeline
             </h2>
             {!app.interviews || app.interviews.length === 0 ? (
-              <p className="text-sm text-slate-400 bg-slate-50 p-6 rounded-lg border border-dashed text-center">
+              <p className="text-sm text-muted-foreground bg-muted p-6 rounded-lg border border-border text-center">
                 No dynamic process components tracked yet for this employment card context.
               </p>
             ) : (
               <div className="space-y-3">
                 {app.interviews.map((interview) => (
-                  <div key={interview.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex items-center justify-between group">
+                  <div key={interview.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-center justify-between group">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-extrabold bg-slate-200 text-slate-800 px-2 py-0.5 rounded tracking-wide uppercase">{interview.round}</span>
-                        <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded tracking-wide uppercase">{interview.format}</span>
-                        <p className="text-sm font-bold text-slate-800">
-                          {new Date(interview.date).toLocaleDateString('en-IN')} at{' '}
-                          {new Intl.DateTimeFormat('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            hour: 'numeric',
-                            minute: 'numeric',
-                            hour12: true
-                          }).format(new Date(interview.date))}
+                        <span className="text-[10px] font-extrabold bg-muted-foreground/20 text-foreground px-2 py-0.5 rounded tracking-wide uppercase">{interview.round}</span>
+                        <span className="text-[10px] font-extrabold bg-primary/20 text-primary px-2 py-0.5 rounded tracking-wide uppercase">{interview.format}</span>
+                        <p className="text-sm font-bold text-foreground">
+                          {new Date(interview.date).toLocaleDateString('en-IN')}
                         </p>
                       </div>
-                      {interview.notes && <p className="text-xs text-slate-500 italic mt-0.5">"{interview.notes}"</p>}
+                      {interview.notes && <p className="text-xs text-muted-foreground italic mt-0.5">"{interview.notes}"</p>}
                     </div>
                     
                     <div className="flex items-center gap-3">
                       {interview.completed ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <Clock className="h-5 w-5 text-amber-500 animate-pulse" />}
-                      
-                      {/* 🎯 NEW DELETE BUTTON */}
                       <button 
                         onClick={() => deleteInterviewMutation.mutate(interview.id)}
-                        className="text-slate-400 hover:text-red-600 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                        title="Delete Interview"
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1 opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -232,25 +221,24 @@ const handleInterviewSubmit = (e) => {
           </div>
         </div>
 
-        {/* ... [Schedule Interview Form stays here as is] ... */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Schedule Interview</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Append an upcoming evaluation timestamp loop straight onto your tracking cards ledger.</p>
+            <h2 className="text-lg font-bold text-foreground">Schedule Interview</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Append an upcoming evaluation timestamp loop onto your tracking cards.</p>
           </div>
           <form onSubmit={handleInterviewSubmit} className="space-y-3 pt-2">
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Event Date</label>
-              <input type="date" className="w-full flex h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900" value={interviewForm.date} onChange={(e) => setInterviewForm({...interviewForm, date: e.target.value})} />
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Event Date</label>
+              <input type="date" className="w-full h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring" value={interviewForm.date} onChange={(e) => setInterviewForm({...interviewForm, date: e.target.value})} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Event Time</label>
-              <Input type="text" placeholder="e.g. 14:00 " className="bg-white border-slate-200" value={interviewForm.time} onChange={(e) => setInterviewForm({...interviewForm, time: e.target.value})} />
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Event Time</label>
+              <Input type="text" placeholder="e.g. 14:00 " className="bg-background" value={interviewForm.time} onChange={(e) => setInterviewForm({...interviewForm, time: e.target.value})} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Round Classification</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Round Classification</label>
               <Select value={interviewForm.round} onValueChange={(val) => setInterviewForm({...interviewForm, round: val})}>
-                <SelectTrigger className="bg-white border-slate-200"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PHONE">Phone Screen</SelectItem>
                   <SelectItem value="TECHNICAL">Technical Round</SelectItem>
@@ -261,9 +249,9 @@ const handleInterviewSubmit = (e) => {
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Interview Format</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Interview Format</label>
               <Select value={interviewForm.format} onValueChange={(val) => setInterviewForm({...interviewForm, format: val})}>
-                <SelectTrigger className="bg-white border-slate-200"><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Zoom/Meet">Online (Zoom/Meet)</SelectItem>
                   <SelectItem value="Phone Call">Phone Call</SelectItem>
@@ -272,11 +260,11 @@ const handleInterviewSubmit = (e) => {
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Focus Notes</label>
-              <Input type="text" placeholder="Panelists, topics, or index pointers..." className="bg-white border-slate-200" value={interviewForm.notes} onChange={(e) => setInterviewForm({...interviewForm, notes: e.target.value})} />
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Focus Notes</label>
+              <Input type="text" placeholder="Panelists, topics..." className="bg-background" value={interviewForm.notes} onChange={(e) => setInterviewForm({...interviewForm, notes: e.target.value})} />
             </div>
-            <Button type="submit" disabled={addInterviewMutation.isPending} className="w-full bg-slate-900 text-white hover:bg-slate-800 font-semibold flex items-center justify-center gap-1.5 mt-2">
-              <Plus className="h-4 w-4 stroke-[3]" /> {addInterviewMutation.isPending ? 'Logging Meeting...' : 'Log Meeting Row'}
+            <Button type="submit" disabled={addInterviewMutation.isPending} className="w-full mt-2">
+              {addInterviewMutation.isPending ? 'Logging...' : 'Log Meeting Row'}
             </Button>
           </form>
         </div>
