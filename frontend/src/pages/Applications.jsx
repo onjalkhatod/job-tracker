@@ -10,7 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon, Plus } from 'lucide-react';
+import { Download, Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon, Plus } from 'lucide-react';
+import Papa from 'papaparse';
 
 const API_URL = 'http://localhost:5000/api/applications';
 
@@ -28,7 +29,7 @@ export default function Applications() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // ➕ Form State Configurations
+  // Form State Configurations
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ company: '', role: '', status: 'APPLIED', notes: '' });
 
@@ -48,7 +49,25 @@ export default function Applications() {
     },
   });
 
-  // ➕ Create Record Asynchronous Mutation Function
+  const handleExportCSV = () => {
+    if (!filteredApplications || filteredApplications.length === 0) {
+      toast.error('No data available to export');
+      return;
+    }
+    const csv = Papa.unparse(filteredApplications);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    link.href = url;
+    link.setAttribute('download', `applications-${date}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Applications exported successfully');
+  };
+
+  // Create Record Asynchronous Mutation Function
   const createMutation = useMutation({
     mutationFn: async (newApp) => {
       const token = localStorage.getItem('token');
@@ -176,6 +195,14 @@ export default function Applications() {
           >
             <Plus className="h-4 w-4 stroke-[3]" />
             Add Application
+          </Button>
+
+          <Button 
+            variant="outline" 
+            onClick={handleExportCSV}
+            className="font-semibold flex items-center gap-1.5">
+            <Download className="h-4 w-4" />
+            Export CSV
           </Button>
         </div>
       </div>

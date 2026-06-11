@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { register, login } = require('../controllers/authController');
+const { register, login, updatePassword, getMe } = require('../controllers/authController');
 const rateLimit = require('express-rate-limit');
+const authMiddleware = require('../middleware/auth');
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -31,5 +32,7 @@ router.post(
 );
 
 router.post('/login', authLimiter, login);
+router.put('/password', authMiddleware, updatePassword);
+router.get('/me', authMiddleware, getMe);
 
 module.exports = router;

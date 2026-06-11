@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'sonner'; 
-import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout'; 
 import Login from '@/pages/Login';
@@ -10,14 +9,16 @@ import Dashboard from '@/pages/Dashboard';
 import Applications from '@/pages/Applications';
 import Analytics from '@/pages/Analytics'; 
 import ApplicationDetail from '@/pages/ApplicationDetail';
+import Navbar from './components/Navbar';
 import Landing from "@/pages/Landing";
+import Profile from './pages/Profile';
 import { ThemeProvider } from './components/theme-provider';
 
 function MainLayout() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
-      <Outlet /> {/* Renders the inner child components smoothly */}
+      <Outlet /> {}
     </div>
   );
 }
@@ -72,6 +73,14 @@ export default function App() {
               </ProtectedRoute>
             } />
           </Route>
+          
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Profile />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
       </ThemeProvider>

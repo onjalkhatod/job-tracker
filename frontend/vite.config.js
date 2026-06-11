@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss({
       darkMode: ['class'],
     })
-  ],
+  ],  
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
