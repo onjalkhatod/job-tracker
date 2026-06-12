@@ -19,23 +19,18 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  // 🛠️ COMBINED INTO ONE SINGLE USEFORM HOOK
   const { 
     register, 
     handleSubmit, 
     setValue, 
     formState: { errors } 
   } = useForm({
-    defaultValues: {
-      email: "",
-      password: ""
-    },
-    mode: 'onTouched' // Keeps your real-time touch validation alive!
+    defaultValues: { email: "", password: "" },
+    mode: 'onTouched'
   });
   
   useEffect(() => {
     if (searchParams.get("demo") === "true") {
-      // Set your configured seed database demo credentials
       setValue("email", "demo@jobtracker.com");
       setValue("password", "demo123456");
     }
@@ -44,11 +39,6 @@ export default function Login() {
   const mutation = useMutation({
     mutationFn: api.auth.login,
     onSuccess: (data) => {
-      // 🔍 DEBUG LOG: Let's see exactly what the backend sent!
-      console.log("--- BACKEND LOGIN RESPONSE ---");
-      console.log(data);
-      console.log("------------------------------");
-
       login(data.token, data.user);
       navigate('/dashboard');
     },
@@ -63,64 +53,67 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-border bg-card p-12 shadow-sm max-w-md mx-auto mt-16 transition-colors duration-300 animate-in fade-in duration-200">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome Back</h2>
-        <p className="text-sm text-muted-foreground mt-1">Sign in to monitor your active job queue</p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Email Address</label>
-          <Input  
-            type="email"
-            placeholder="name@company.com"
-            className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-            {...register('email', { 
-              required: 'Account identifier authentication email context maps are required.' 
-            })}
-          />
-          {errors.email && (
-            <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.email.message}</p>
-          )}
+    // Fluid wrapper: centered, uses screen width, respects padding
+    <div className="w-full max-w-md mx-auto px-4 py-8 mt-8 sm:mt-16">
+      <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-8 sm:p-12 shadow-sm transition-colors duration-300 animate-in fade-in duration-200">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome Back</h2>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to monitor your active job queue</p>
         </div>
 
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Password</label>
-          <Input
-            type="password"
-            placeholder="••••••••"
-            className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
-            {...register('password', { 
-              required: 'Security verification access pass key is required.' 
-            })}
-          />
-          {errors.password && (
-            <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.password.message}</p>
-          )}
-        </div>
-
-        {serverError && (
-          <div className="rounded-md bg-destructive/10 p-2.5 text-xs text-destructive font-medium border border-destructive/20">
-            🛑 {serverError}
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Email Address</label>
+            <Input  
+              type="email"
+              placeholder="name@company.com"
+              className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+              {...register('email', { 
+                required: 'Account identifier authentication email context maps are required.' 
+              })}
+            />
+            {errors.email && (
+              <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.email.message}</p>
+            )}
           </div>
-        )}
 
-        <Button 
-          type="submit" 
-          disabled={mutation.isPending}
-          className="w-full mt-2"
-        >
-          {mutation.isPending ? 'Verifying Validation Parameters...' : 'Sign In Account'}
-        </Button>
-      </form>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Password</label>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
+              {...register('password', { 
+                required: 'Security verification access pass key is required.' 
+              })}
+            />
+            {errors.password && (
+              <p className="text-xs font-medium text-destructive mt-1">⚠️ {errors.password.message}</p>
+            )}
+          </div>
 
-      <p className="text-xs text-muted-foreground text-center">
-        Don't have an account yet?{' '}
-        <Link to="/register" className="text-foreground font-semibold hover:underline">
-          Create Account
-        </Link>
-      </p>
+          {serverError && (
+            <div className="rounded-md bg-destructive/10 p-2.5 text-xs text-destructive font-medium border border-destructive/20">
+              🛑 {serverError}
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            disabled={mutation.isPending}
+            className="w-full mt-2"
+          >
+            {mutation.isPending ? 'Verifying Validation Parameters...' : 'Sign In Account'}
+          </Button>
+        </form>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Don't have an account yet?{' '}
+          <Link to="/register" className="text-foreground font-semibold hover:underline">
+            Create Account
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

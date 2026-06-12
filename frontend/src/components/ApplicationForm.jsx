@@ -33,7 +33,6 @@ export default function ApplicationForm({ application, onClose }) {
     name: 'interviews'
   });
 
-  // Watch the live status value through control (optimized for React Compiler)
   const currentStatus = useWatch({
     control,
     name: 'status',
@@ -42,7 +41,6 @@ export default function ApplicationForm({ application, onClose }) {
   
   const showInterviewSection = currentStatus === 'SCREENING' || currentStatus === 'INTERVIEW';
 
-  // Use a mutable ref to track fields length to prevent unnecessary effect execution triggers
   const fieldsLengthRef = useRef(fields.length);
   useEffect(() => {
     fieldsLengthRef.current = fields.length;
@@ -50,8 +48,7 @@ export default function ApplicationForm({ application, onClose }) {
 
   useEffect(() => {
     if (showInterviewSection && fieldsLengthRef.current === 0) {
-      // Changed initial round/format defaults to match expected backend codes
-      append({ date: '', time: '', round: 'HR', format: 'ONLINE', location: '' });
+      append({ date: '', time: '', round: 'TECHNICAL', format: 'ONLINE', location: '' });
     }
   }, [showInterviewSection, append]);
 
@@ -81,7 +78,6 @@ export default function ApplicationForm({ application, onClose }) {
 
       if (showInterviewSection && formData.interviews?.length > 0) {
         const validInterviews = formData.interviews.filter(i => i.date && i.time);
-        
         for (const interview of validInterviews) {
           await axios.post(`http://localhost:5000/api/applications/${appId}/interviews`, interview, { headers });
         }
@@ -98,7 +94,8 @@ export default function ApplicationForm({ application, onClose }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-2 max-h-[80vh] overflow-y-auto">
-      <div className="grid grid-cols-2 gap-4">
+      {/* Responsive Grid: Swaps from 1 col to 2 col automatically */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Company</label>
           <Input {...register('company', { required: 'Required field' })} />
@@ -128,7 +125,7 @@ export default function ApplicationForm({ application, onClose }) {
       </div>
 
       {showInterviewSection && (
-        <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="flex items-center gap-2 text-foreground font-bold text-sm">
               <CalendarDays className="h-4 w-4 text-primary" />
@@ -158,13 +155,11 @@ export default function ApplicationForm({ application, onClose }) {
                 </div>
               </div>
 
+              {/* Responsive Selects: Swaps to full width on mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Round Type</label>
-                  <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none"
-                    {...register(`interviews.${index}.round`)}
-                  >
+                  <select className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none" {...register(`interviews.${index}.round`)}>
                     <option value="TECHNICAL">Technical Round</option>
                     <option value="HR">HR Screening</option>
                     <option value="BEHAVIORAL">Behavioral Round</option>
@@ -173,10 +168,7 @@ export default function ApplicationForm({ application, onClose }) {
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Format</label>
-                  <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none"
-                    {...register(`interviews.${index}.format`)}
-                  >
+                  <select className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus:outline-none" {...register(`interviews.${index}.format`)}>
                     <option value="ONLINE">Online (Zoom/Meet)</option>
                     <option value="IN_PERSON">In Person (On-site)</option>
                     <option value="PHONE">Phone Call</option>
@@ -207,7 +199,7 @@ export default function ApplicationForm({ application, onClose }) {
       <div>
         <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Additional Notes</label>
         <textarea 
-          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           {...register('notes')} 
         />
       </div>

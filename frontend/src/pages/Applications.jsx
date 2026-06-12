@@ -67,7 +67,6 @@ export default function Applications() {
     toast.success('Applications exported successfully');
   };
 
-  // Create Record Asynchronous Mutation Function
   const createMutation = useMutation({
     mutationFn: async (newApp) => {
       const token = localStorage.getItem('token');
@@ -117,7 +116,7 @@ export default function Applications() {
 
   if (isLoading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((n) => <Skeleton key={n} className="h-44 w-full rounded-xl" />)}
         </div>
@@ -149,7 +148,7 @@ export default function Applications() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-h-screen">
       
       {/* Action Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
@@ -164,7 +163,7 @@ export default function Applications() {
             <Input
               type="text"
               placeholder="Search companies..."
-              className="pl-9"
+              className="pl-9 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -191,7 +190,7 @@ export default function Applications() {
 
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="font-semibold flex items-center gap-1.5"
+            className="font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
             <Plus className="h-4 w-4 stroke-[3]" />
             Add Application
@@ -200,7 +199,7 @@ export default function Applications() {
           <Button 
             variant="outline" 
             onClick={handleExportCSV}
-            className="font-semibold flex items-center gap-1.5">
+            className="font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap">
             <Download className="h-4 w-4" />
             Export CSV
           </Button>

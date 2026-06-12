@@ -100,7 +100,7 @@ const Dashboard = () => {
       ];
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto w-full bg-background min-h-screen text-foreground transition-colors duration-300">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-background min-h-screen text-foreground transition-colors duration-300">
       
       {/* 1. Amber Banner Strip */}
       {todayInterviews.length > 0 && !dismissed && (
@@ -126,7 +126,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Grid Stat Matrix Card Panel */}
+      {/* Grid Stat Matrix Card Panel - Responsive: 1 to 5 columns */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 w-full">
         <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${totalApplied === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">

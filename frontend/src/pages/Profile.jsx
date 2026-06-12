@@ -45,7 +45,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    // Fluid wrapper: centered, responsive padding, full width
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
       <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
       
       {/* Profile Info Card */}
@@ -93,7 +94,8 @@ export default function Profile() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
+          {/* Changed max-w-sm to w-full so it fills the card on mobile */}
+          <form onSubmit={handleSubmit} className="space-y-4 w-full">
             <div className="space-y-2">
               <Label htmlFor="current">Current Password</Label>
               <Input id="current" type="password" required value={formData.currentPassword} 

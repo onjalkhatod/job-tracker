@@ -74,47 +74,37 @@ export default function ApplicationDetail() {
       });
     },
     onSuccess: () => {
-      // 1. Refresh the specific application data (for the detail page)
       queryClient.invalidateQueries({ queryKey: ['application', id] });
-      
-      // 2. CRITICAL: Refresh the upcoming interviews list (for the dashboard)
       queryClient.invalidateQueries({ queryKey: ['upcomingInterviews'] });
-      
       toast.success('Interview successfully removed');
     },
     onError: () => {
       toast.error('Failed to delete interview');
     }
   });
+
   if (isLoading) return <div className="p-8 text-center text-slate-500 font-medium">Resolving application parameters...</div>;
   if (isError) return <div className="p-8 text-center text-red-500 font-bold">Failed to find application mapping structures.</div>;
 
-  // 🎯 NEW: Timeline Index & Formatted Date
   const currentStepIndex = STATUS_STEPS.indexOf(app.status);
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     dateStyle: 'long',
     timeStyle: 'short'
   }).format(new Date(app.updatedAt));
 
-const handleInterviewSubmit = (e) => {
-  e.preventDefault();
-  
-  if (!interviewForm.date || !interviewForm.time) {
-    toast.error('Date and time inputs are required.');
-    return;
-  }
-
-  const isoDateTime = `${interviewForm.date}T${interviewForm.time}:00`;
-  
-  const payload = { 
-    ...interviewForm, 
-    date: new Date(isoDateTime).toISOString() 
+  const handleInterviewSubmit = (e) => {
+    e.preventDefault();
+    if (!interviewForm.date || !interviewForm.time) {
+      toast.error('Date and time inputs are required.');
+      return;
+    }
+    const isoDateTime = `${interviewForm.date}T${interviewForm.time}:00`;
+    const payload = { ...interviewForm, date: new Date(isoDateTime).toISOString() };
+    addInterviewMutation.mutate(payload);
   };
 
-  addInterviewMutation.mutate(payload);
-};
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 min-h-screen bg-background text-foreground transition-colors duration-300 animate-in fade-in duration-200">
+    <div className="w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-6 min-h-screen bg-background text-foreground transition-colors duration-300 animate-in fade-in duration-200">
       
       <Button 
         variant="ghost" 
@@ -125,9 +115,9 @@ const handleInterviewSubmit = (e) => {
       </Button>
 
       {/* 4-Step Visual Timeline */}
-      <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex justify-between items-center">
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-wrap justify-between items-center gap-4">
         {STATUS_STEPS.map((step, index) => (
-          <div key={step} className="flex flex-col items-center flex-1">
+          <div key={step} className="flex flex-col items-center flex-1 min-w-[60px]">
             <div className={`p-2 rounded-full ${index <= currentStepIndex ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
               {index <= currentStepIndex ? <CheckCircle2 className="h-6 w-6" /> : <Circle className="h-6 w-6" />}
             </div>
@@ -139,12 +129,12 @@ const handleInterviewSubmit = (e) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Building2 className="h-6 w-6 text-muted-foreground" />
                 <h1 className="text-2xl font-black text-foreground">{app.company}</h1>
               </div>
-              <div className="w-36">
+              <div className="w-full sm:w-36">
                 <Select value={app.status} onValueChange={(newStatus) => updateAppMutation.mutate({ status: newStatus })}>
                   <SelectTrigger className="w-full bg-background font-semibold">
                     <SelectValue />
@@ -271,4 +261,4 @@ const handleInterviewSubmit = (e) => {
       </div>
     </div>
   );
-}             
+}

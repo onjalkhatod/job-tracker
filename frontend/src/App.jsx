@@ -14,11 +14,17 @@ import Landing from "@/pages/Landing";
 import Profile from './pages/Profile';
 import { ThemeProvider } from './components/theme-provider';
 
+/**
+ * MainLayout provides the fluid container for pages that require a Navbar.
+ * It uses flex-grow to ensure the page content always fills the vertical space.
+ */
 function MainLayout() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col w-full transition-colors duration-300">
       <Navbar />
-      <Outlet /> {}
+      <main className="flex-grow w-full">
+        <Outlet />
+      </main>
     </div>
   );
 }
@@ -55,7 +61,6 @@ export default function App() {
                 <ProtectedRoute><DashboardLayout><Analytics /></DashboardLayout></ProtectedRoute>
               } />
               
-              {/* Profile is now inside MainLayout, so it will have the Navbar */}
               <Route path="/profile" element={
                 <ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>
               } />
