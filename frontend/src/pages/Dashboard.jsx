@@ -38,8 +38,15 @@ const Dashboard = () => {
   });
 
   const [dismissed, setDismissed] = useState(false);
-  const isToday = (dateString) => new Date(dateString).toDateString() === new Date().toDateString();
-  const todayInterviews = upcomingInterviews.filter(i => isToday(i.date));
+
+  // Helper to compare dates ignoring time
+  const isSameDay = (d1, d2) => {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
+
+  const todayInterviews = upcomingInterviews.filter(i => isSameDay(new Date(i.date), new Date()));
 
   // 2. Loading Canvas State placeholder sweep
   if (isLoading) {
@@ -104,19 +111,27 @@ const Dashboard = () => {
       
       {/* 1. Amber Banner Strip */}
       {todayInterviews.length > 0 && !dismissed && (
-        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 px-4 py-3 rounded-lg shadow-sm">
+      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 px-4 py-3 rounded-lg shadow-sm">
+        <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
             <span className="text-sm font-medium">
-              Today: {todayInterviews[0].application.company} ({todayInterviews[0].application.role}) 
-              at {new Date(todayInterviews[0].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              You have {todayInterviews.length} {todayInterviews.length === 1 ? 'interview' : 'interviews'} today:
             </span>
           </div>
           <button onClick={() => setDismissed(true)} className="text-amber-700 dark:text-amber-300 hover:text-amber-900">
             <XCircle className="h-5 w-5" />
           </button>
         </div>
-      )}
+        <ul className="mt-2 text-sm space-y-1 list-disc list-inside">
+          {todayInterviews.map((i) => (
+            <li key={i.id}>
+              {i.application.company} ({i.application.role}) at {new Date(i.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
 
       {/* Header Block */}
       <div>
@@ -126,7 +141,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Grid Stat Matrix Card Panel - Responsive: 1 to 5 columns */}
+      {/* Grid Stat Matrix Card Panel */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 w-full">
         <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-opacity duration-200 ${totalApplied === 0 ? 'opacity-60' : 'opacity-100'}`}>
           <div className="flex items-center justify-between space-y-0 pb-2">

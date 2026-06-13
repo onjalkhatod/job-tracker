@@ -4,9 +4,11 @@ const prisma = new PrismaClient();
 // 1. GET ALL APPLICATIONS (Only for the logged-in user)
 const getApplications = async (req, res) => {
   try {
+    console.log("UserID:", req.user.userId)
     const applications = await prisma.application.findMany({
       where: { userId: req.user.userId }
     });
+    console.log("DEBUG: Found applications count:", applications.length); 
     res.json(applications);
   } catch (error) {
     res.status(500).json({ error: error.message });

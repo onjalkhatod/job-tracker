@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from 'react';
+import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
@@ -24,13 +25,15 @@ export function AuthProvider({ children }) {
 
   const login = (newToken, userData) => {
     if (!newToken || !userData) {
-      console.error("AuthContext: Missing token or user payload during login dispatch.");
+      toast.error("Session expired. Please log in again.");
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       return;
     }
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
     setUser(userData);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
