@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 1. GET ALL APPLICATIONS (Only for the logged-in user)
 const getApplications = async (req, res) => {
   try {
     console.log("UserID:", req.user.userId)
@@ -15,7 +14,6 @@ const getApplications = async (req, res) => {
   }
 };
 
-// 2. POST NEW APPLICATION
 const createApplication = async (req, res, next) => {
   try {
     const { company, role, status, notes } = req.body;
@@ -30,7 +28,7 @@ const createApplication = async (req, res, next) => {
         role,
         status: status || 'APPLIED',
         notes,
-        userId: req.user.userId // Linked safely to the authenticated user
+        userId: req.user.userId
       }
     });
 
@@ -40,13 +38,11 @@ const createApplication = async (req, res, next) => {
   }
 };
 
-// 3. PUT (UPDATE) APPLICATION
 const updateApplication = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { company, role, status, notes } = req.body;
 
-    // Ownership check: Find the application first
     const app = await prisma.application.findUnique({
       where: { id: parseInt(id) }
     });
@@ -55,7 +51,6 @@ const updateApplication = async (req, res, next) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    // Block if a user tries to modify someone else's tracking data
     if (app.userId !== req.user.userId) {
       return res.status(401).json({ error: 'Unauthorized adjustment attempt' });
     }
@@ -71,7 +66,6 @@ const updateApplication = async (req, res, next) => {
   }
 };
 
-// 4. DELETE APPLICATION
 const deleteApplication = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -104,7 +98,6 @@ const getApplicationStats = async (req, res) => {
       where: { userId: req.user.userId }
     });
 
-    // Generate accurate counts
     const counts = {
       APPLIED: applications.filter(a => a.status === 'APPLIED').length,
       SCREENING: applications.filter(a => a.status === 'SCREENING').length,
@@ -140,7 +133,7 @@ const getApplicationById = async (req, res, next) => {
     const application = await prisma.application.findUnique({
       where: { id: parseInt(id) },
       include: {
-        interviews: true // 🛠️ CRITICAL: If this line is missing, your frontend view breaks when matching lists!
+        interviews: true 
       }
     });
 

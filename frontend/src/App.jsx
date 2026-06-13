@@ -36,11 +36,11 @@ export default function App() {
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <BrowserRouter>
           <Routes>
-            {/* 1. Raw Authentication Routes: Completely free of the Navbar */}
+            {/* Raw Authentication Routes: Completely free of the Navbar */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* 2. Public & Protected Application Views: Everything here gets the Navbar */}
+            {/* Public & Protected Application Views: Everything here gets the Navbar */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Landing />} />
 

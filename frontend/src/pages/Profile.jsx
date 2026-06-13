@@ -14,7 +14,7 @@ export default function Profile() {
   const [formData, setFormData] = useState({ currentPassword: '', newPassword: '' });
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
-  // 1. Fetch real user data
+  // Fetch user data
   const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
@@ -45,7 +45,6 @@ export default function Profile() {
   };
 
   return (
-    // Fluid wrapper: centered, responsive padding, full width
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
       <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
       
@@ -94,7 +93,7 @@ export default function Profile() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Changed max-w-sm to w-full so it fills the card on mobile */}
+          {}
           <form onSubmit={handleSubmit} className="space-y-4 w-full">
             <div className="space-y-2">
               <Label htmlFor="current">Current Password</Label>

@@ -29,7 +29,6 @@ export default function Navbar() {
     }`;
 
   return (
-    // 'w-full' ensures the header spans the container; 'px-4 sm:px-6' provides fluid side breathing room
     <header className="w-full border-b border-border bg-background sticky top-0 z-50 shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between gap-4 transition-colors duration-300">
       
       {/* LEFT: Branding + Primary Navigation */}

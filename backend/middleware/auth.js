@@ -10,7 +10,6 @@ const authMiddleware = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🎯 UNIVERSAL DATA PASS MATCHING:
     // Binds both common naming formats simultaneously onto the request context object
     req.user = {
       ...decoded,

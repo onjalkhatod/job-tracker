@@ -1,30 +1,27 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 1. POST /api/applications/:applicationId/interviews
+// POST /api/applications/:applicationId/interviews
 const createInterview = async (req, res, next) => {
   try {
-    // 🛠️ FAIL-SAFE FIX: Fallback to 'id' if 'applicationId' is not parsed by the router
     const applicationId = req.params.applicationId || req.params.id;
     const { date, time, round, notes, completed, format } = req.body;
 
-    // Fail-safe validation check
     if (!date || !time || !round || !format) {
       return res.status(400).json({ error: "Missing required tracking values (date, time, round, and format)." });
     }
 
     const parsedAppId = parseInt(applicationId);
     
-    // Check if the parsed ID is completely broken
     if (!parsedAppId || isNaN(parsedAppId)) {
-      console.error("❌ Broken ID received in backend params:", req.params);
+      console.error("Broken ID received in backend params:", req.params);
       return res.status(400).json({ error: "Invalid application ID format passed to the server." });
     }
 
     try {
       const newInterview = await prisma.interview.create({
         data: {
-          date: new Date(date),        // Ensures it maps to standard PostgreSQL DateTime
+          date: new Date(date),       
           time: time,
           round: round,                
           notes: notes || "",
@@ -32,7 +29,7 @@ const createInterview = async (req, res, next) => {
           format: format,              
           application: {
             connect: {
-              id: parsedAppId          // Fixed verified integer literal
+              id: parsedAppId          
             }
           }
         }
@@ -41,7 +38,7 @@ const createInterview = async (req, res, next) => {
       return res.status(201).json(newInterview);
 
     } catch (prismaError) {
-      console.error("❌ Prisma Database Field Error Details:", prismaError.message);
+      console.error("Prisma Database Field Error Details:", prismaError.message);
       return res.status(400).json({ 
         error: "Database integrity violation.",
         details: prismaError.message 
@@ -54,7 +51,7 @@ const createInterview = async (req, res, next) => {
   }
 };
 
-// 2. GET /api/applications/:applicationId/interviews
+// GET /api/applications/:applicationId/interviews
 const getApplicationInterviews = async (req, res, next) => {
   try {
     const applicationId = req.params.applicationId || req.params.id;
@@ -71,7 +68,7 @@ const getApplicationInterviews = async (req, res, next) => {
   }
 };
 
-// 3. PUT /api/interviews/:id
+// PUT /api/interviews/:id
 const updateInterview = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -95,7 +92,7 @@ const updateInterview = async (req, res, next) => {
   }
 };
 
-// 4. DELETE /api/interviews/:id
+// DELETE /api/interviews/:id
 const deleteInterview = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -110,14 +107,13 @@ const deleteInterview = async (req, res, next) => {
   }
 };
 
-// 5. GET /api/interviews/upcoming (Next 7 days)
+// GET /api/interviews/upcoming (Next 7 days)
 const getUpcomingInterviews = async (req, res, next) => {
   try {
     const now = new Date();
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(now.getDate() + 7);
 
-    // 1. Get ALL upcoming interviews (Fail-safe)
     const upcoming = await prisma.interview.findMany({
       where: {
         completed: false,
@@ -127,8 +123,6 @@ const getUpcomingInterviews = async (req, res, next) => {
       orderBy: { date: 'asc' }
     });
 
-    // 2. Filter manually to ensure isolation by user
-    // We only return records where the application exists and matches the current user
     const filtered = upcoming.filter(i => i.application && i.application.userId === req.user?.id);
 
     res.status(200).json(filtered);

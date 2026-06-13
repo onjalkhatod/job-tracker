@@ -12,16 +12,11 @@ const getHeaders = () => {
 
 // Centralized response and error unboxing engine
 const handleResponse = async (response) => {
-  let json = {};
-  try {
-    json = await response.json();
-  } catch {
-    // Optional catch binding (omitting the unused 'e' variable) to satisfy strict ESLint rules
+  const json = await response.json().catch(() => {
     throw new Error(`Server responded with status ${response.status} (Non-JSON payload)`);
-  }
-  
+  });
+
   if (!response.ok) {
-    // Unbox backend validation arrays or fallback cleanly to status text codes
     const errorMsg = 
       (json.errors && Array.isArray(json.errors) ? json.errors.join(', ') : null) || 
       json.message || 
@@ -33,7 +28,6 @@ const handleResponse = async (response) => {
   }
   return json;
 };
-
 export const api = {
   auth: {
     register: (userData) => 

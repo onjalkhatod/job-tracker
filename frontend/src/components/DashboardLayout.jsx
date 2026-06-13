@@ -1,6 +1,5 @@
 export default function DashboardLayout({ children }) {
   return (
-    // 'flex-1' and 'flex-col' ensure the layout fills the screen height
     <div className="flex-1 flex flex-col min-h-screen bg-background">
       <main className="flex-1 overflow-y-auto">
         {/* Fluid wrapper: 

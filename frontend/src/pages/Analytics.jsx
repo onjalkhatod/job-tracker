@@ -51,7 +51,6 @@ export default function Analytics() {
   ];
 
   return (
-    // Fluid wrapper for all screens
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-200">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Pipeline Analytics</h1>
@@ -60,7 +59,7 @@ export default function Analytics() {
         </p>
       </div>
 
-      {/* Grid shifts from 1 column (mobile) to 2 columns (md) automatically */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Stage Status Distribution */}

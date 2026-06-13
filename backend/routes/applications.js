@@ -22,16 +22,12 @@ const validateFields = (req, res, next) => {
   next();
 };
 
-// 1. GET Stats endpoint (Static path)
 router.get('/stats', verifyToken, getApplicationStats);
 
-// 2. GET All applications general collection (Static path)
 router.get('/', verifyToken, getApplications);
 
-// 3. GET Single Application Detail record (Dynamic path matching parameter)
 router.get('/:id', verifyToken, getApplicationById);
 
-// 4. POST New single application payload 
 router.post(
   '/',
   verifyToken,
@@ -47,11 +43,9 @@ router.post(
   createApplication
 );
 
-// 5. PUT / DELETE endpoints
 router.put('/:id', verifyToken, updateApplication);
 router.delete('/:id', verifyToken, deleteApplication);
 
-// 6. Nested tracks for interview logs
 router.post('/:applicationId/interviews', verifyToken, createInterview);
 router.get('/:applicationId/interviews', verifyToken, getApplicationInterviews);;
 

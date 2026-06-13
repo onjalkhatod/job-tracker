@@ -45,7 +45,6 @@ export default function Register() {
   if (isAuthenticated) return null;
 
   return (
-    // Fluid wrapper: centered, responsive padding, responsive width
     <div className="w-full max-w-md mx-auto px-4 py-8 mt-8 sm:mt-16">
       <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-8 sm:p-12 shadow-sm transition-colors duration-300 animate-in fade-in duration-200">
         <div className="text-center">
@@ -109,7 +108,7 @@ export default function Register() {
 
           {serverError && (
             <div className="rounded-md bg-destructive/10 p-2.5 text-xs text-destructive font-medium border border-destructive/20">
-              🛑 {serverError}
+              {serverError}
             </div>
           )}
 

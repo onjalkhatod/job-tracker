@@ -3,10 +3,8 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { get } = require('../routes/auth');
 
-// Standard initialization
 const prisma = new PrismaClient();
 
-// --- REGISTER LOGIC ---
 const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
@@ -37,7 +35,6 @@ const register = async (req, res, next) => {
   }
 };
 
-// --- LOGIN LOGIC ---
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -58,7 +55,6 @@ const login = async (req, res, next) => {
       { expiresIn: '1d' }
     );
 
-    // Deliver BOTH token and user object context properties to the caller client
     res.status(200).json({ 
       token,
       user: {
@@ -102,7 +98,7 @@ const getMe = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      select: { name: true, email: true, createdAt: true } // Select only what we need
+      select: { name: true, email: true, createdAt: true } 
     });
     
     if (!user) return res.status(404).json({ error: "User not found" });

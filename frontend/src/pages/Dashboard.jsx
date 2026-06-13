@@ -6,7 +6,7 @@ import axios from 'axios';
 import { getCountdown } from '../utils/dateHelpers';
 
 const Dashboard = () => {
-  // 1. Fetch analytical telemetry from backend stats portal
+  // Fetch analytical telemetry from backend stats portal
   const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['applicationStats'],
     queryFn: async () => {
@@ -39,7 +39,6 @@ const Dashboard = () => {
 
   const [dismissed, setDismissed] = useState(false);
 
-  // Helper to compare dates ignoring time
   const isSameDay = (d1, d2) => {
     return d1.getFullYear() === d2.getFullYear() &&
            d1.getMonth() === d2.getMonth() &&
@@ -48,7 +47,6 @@ const Dashboard = () => {
 
   const todayInterviews = upcomingInterviews.filter(i => isSameDay(new Date(i.date), new Date()));
 
-  // 2. Loading Canvas State placeholder sweep
   if (isLoading) {
     return (
       <div className="flex h-96 w-full items-center justify-center space-x-2">
@@ -58,7 +56,6 @@ const Dashboard = () => {
     );
   }
 
-  // 3. Fallback Connection Error State Block
   if (isError) {
     return (
       <div className="flex h-96 w-full flex-col items-center justify-center space-y-4 rounded-xl border border-red-200 bg-red-50/50 p-6 text-center">
@@ -109,7 +106,7 @@ const Dashboard = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-background min-h-screen text-foreground transition-colors duration-300">
       
-      {/* 1. Amber Banner Strip */}
+      {/* Amber Banner Strip */}
       {todayInterviews.length > 0 && !dismissed && (
       <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 px-4 py-3 rounded-lg shadow-sm">
         <div className="flex justify-between items-start mb-2">
