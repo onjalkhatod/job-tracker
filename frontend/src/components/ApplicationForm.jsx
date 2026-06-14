@@ -76,9 +76,7 @@ export default function ApplicationForm({ application, onClose }) {
       if (showInterviewSection && formData.interviews?.length > 0) {
         const validInterviews = formData.interviews.filter(i => i.date && i.time);
         for (const interview of validInterviews) {
-          // If you haven't added interview creation to api.js yet, 
-          // ensure this fetch uses the same production-ready base URL logic
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/applications/${appId}/interviews`, {
+          await fetch(`${BASE_URL}/applications/${appId}/interviews`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',

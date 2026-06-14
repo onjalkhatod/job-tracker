@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+if (!BASE_URL) {
+  console.error("CRITICAL: VITE_API_URL is not defined in your environment variables!");
+}
 
 // Helper to dynamically inject the JWT token from localStorage
 const getHeaders = () => {
@@ -29,6 +33,7 @@ const handleResponse = async (response) => {
   return json;
 };
 export const api = {
+  BASE_URL,
   auth: {
     register: (userData) => 
       fetch(`${BASE_URL}/auth/register`, {
