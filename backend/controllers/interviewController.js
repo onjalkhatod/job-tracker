@@ -1,20 +1,19 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 
 // POST /api/applications/:applicationId/interviews
 const createInterview = async (req, res, next) => {
   try {
-    const applicationId = req.params.applicationId || req.params.id;
-    const { date, time, round, notes, completed, format } = req.body;
+    // 1. CHANGE THIS: Look for it in the body, not in req.params
+    const { applicationId, date, time, round, notes, completed, format } = req.body;
 
-    if (!date || !time || !round || !format) {
-      return res.status(400).json({ error: "Missing required tracking values (date, time, round, and format)." });
+    // 2. Validate the body field
+    if (!applicationId || !date || !time || !round || !format) {
+      return res.status(400).json({ error: "Missing required fields: applicationId, date, time, round, and format." });
     }
 
     const parsedAppId = parseInt(applicationId);
     
-    if (!parsedAppId || isNaN(parsedAppId)) {
-      console.error("Broken ID received in backend params:", req.params);
+    if (isNaN(parsedAppId)) {
       return res.status(400).json({ error: "Invalid application ID format passed to the server." });
     }
 
@@ -74,8 +73,27 @@ const updateInterview = async (req, res, next) => {
     const { id } = req.params;
     const { time, date, round, format, location, completed } = req.body;
 
+    const interviewId = parseInt(id);
+
+    // 1. Log for debugging
+    console.log("DEBUG: Attempting to update interview ID:", interviewId);
+
+    // 2. Defensive Check: Does the record exist first?
+    const existingInterview = await prisma.interview.findUnique({
+      where: { id: interviewId },
+    });
+
+    if (!existingInterview) {
+      console.error(`DEBUG: Update failed. Interview ID ${interviewId} not found.`);
+      return res.status(404).json({ 
+        error: "Interview not found.", 
+        message: `No interview record with ID ${interviewId} exists in the database.` 
+      });
+    }
+
+    // 3. Perform the update
     const updatedInterview = await prisma.interview.update({
-      where: { id: parseInt(id) },
+      where: { id: interviewId },
       data: {
         time,
         date: date ? new Date(date) : undefined,
@@ -88,7 +106,12 @@ const updateInterview = async (req, res, next) => {
 
     res.status(200).json(updatedInterview);
   } catch (error) {
-    next(error);
+    // 4. Log detailed database errors for troubleshooting
+    console.error("FULL PRISMA ERROR:", error);
+    res.status(400).json({ 
+      error: "Failed to update interview.", 
+      details: error.message 
+    });
   }
 };
 

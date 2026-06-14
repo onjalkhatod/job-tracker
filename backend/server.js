@@ -13,6 +13,8 @@ const app = express();
 // Middleware
 app.use(express.json());
 
+const prisma = require('./prismaClient');
+
 // CORS Configuration - Securely restricted to your frontend URL
 const corsOptions = {
   origin: process.env.CLIENT_URL || "http://localhost:5173",
@@ -20,13 +22,24 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+async function checkDatabase() {
+  try {
+    await prisma.$connect();
+    console.log("✅ Successfully connected to database!");
+  } catch (error) {
+    console.error("❌ Database connection failed:", error.message);
+  }
+}
+
+checkDatabase();
+
 // Admin Reset Endpoint - Triggered via secret key for environment refresh
 app.post('/api/admin/reset-demo', async (req, res) => {
   if (req.headers['x-admin-key'] !== process.env.ADMIN_SEED_KEY) {
     return res.status(403).json({ error: "Unauthorized" });
   }
   try {
-    await runSeedScript();
+    await runSeedScript(prisma);
     res.status(200).json({ message: "Demo data reset successfully." });
   } catch (error) {
     console.error('Reset Error:', error);

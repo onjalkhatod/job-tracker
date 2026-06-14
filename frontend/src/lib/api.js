@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper to dynamically inject the JWT token from localStorage
 const getHeaders = () => {
@@ -72,4 +72,23 @@ export const api = {
         headers: getHeaders(),
       }).then(handleResponse),
   },
+  stats: {
+    get: async () => {
+      const response = await fetch(`${BASE_URL}/applications/stats`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(response);
+    },
+  },
+  
+  interviews: {
+    getUpcoming: async () => {
+      const response = await fetch(`${BASE_URL}/interviews/upcoming`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(response);
+    }
+  }
 };

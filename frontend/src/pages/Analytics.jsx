@@ -1,18 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { PieChart, TrendingUp, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/lib/api';
 
 export default function Analytics() {
   const { data: applications, isLoading, isError } = useQuery({
     queryKey: ['applications'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/applications', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data;
-    }
+    queryFn: () => api.applications.getAll()
   });
 
   if (isLoading) {
@@ -59,7 +53,6 @@ export default function Analytics() {
         </p>
       </div>
 
-      {}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Stage Status Distribution */}

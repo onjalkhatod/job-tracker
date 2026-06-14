@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import { Calendar, Building2, Briefcase, FileText, CheckCircle2, Clock, ChevronLeft, Circle, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,22 +21,11 @@ export default function ApplicationDetail() {
 
   const { data: app, isLoading, isError } = useQuery({
     queryKey: ['application', id],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/applications/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data;
-    }
+    queryFn: () => api.applications.getOne(id)
   });
 
   const updateAppMutation = useMutation({
-    mutationFn: async (updatedFields) => {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/applications/${id}`, updatedFields, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
+    mutationFn: (updatedFields) => api.applications.update(id, updatedFields),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', id] });
       queryClient.invalidateQueries({ queryKey: ['applications'] });
@@ -46,13 +35,7 @@ export default function ApplicationDetail() {
   });
 
   const addInterviewMutation = useMutation({
-    mutationFn: async (newInterview) => {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(`http://localhost:5000/api/applications/${id}/interviews`, newInterview, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data;
-    },
+    mutationFn: (newInterview) => api.interviews.create(id, newInterview),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', id] });
       queryClient.invalidateQueries({ queryKey: ['applications'] });
@@ -61,17 +44,12 @@ export default function ApplicationDetail() {
       toast.success('Interview row appended to timeline');
     },
     onError: (err) => {
-      toast.error(err.response?.data?.error || 'Failed to log interview details');
+      toast.error(err.message || 'Failed to log interview details');
     }
   });
 
   const deleteInterviewMutation = useMutation({
-    mutationFn: async (interviewId) => {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/interviews/${interviewId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
+    mutationFn: (interviewId) => api.interviews.delete(interviewId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', id] });
       queryClient.invalidateQueries({ queryKey: ['upcomingInterviews'] });
@@ -98,8 +76,7 @@ export default function ApplicationDetail() {
       return;
     }
     const isoDateTime = `${interviewForm.date}T${interviewForm.time}:00`;
-    const payload = { ...interviewForm, date: new Date(isoDateTime).toISOString() };
-    addInterviewMutation.mutate(payload);
+    addInterviewMutation.mutate({ ...interviewForm, date: new Date(isoDateTime).toISOString() });
   };
 
   return (

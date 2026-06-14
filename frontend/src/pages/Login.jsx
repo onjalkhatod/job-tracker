@@ -6,9 +6,6 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import axios from 'axios'; 
-import { toast } from 'sonner';
-
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -16,19 +13,6 @@ export default function Login() {
   const { login, isAuthenticated } = useAuth();
   const [serverError, setServerError] = useState('');
 
-  const handleDemoLogin = async () => {
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { 
-        email: 'demo@trackr.com', 
-        password: 'demo1234' 
-      });
-      login(res.data.token, res.data.user);
-      navigate('/dashboard');
-    } catch (error) {
-      console.error(error); 
-      toast.error("Demo login failed. Please check your backend.");
-    }
-  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -70,7 +54,6 @@ export default function Login() {
   };
 
   return (
-    // Fluid wrapper: centered, uses screen width, respects padding
     <div className="w-full max-w-md mx-auto px-4 py-8 mt-8 sm:mt-16">
       <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-8 sm:p-12 shadow-sm transition-colors duration-300 animate-in fade-in duration-200">
         <div className="text-center">
@@ -123,18 +106,6 @@ export default function Login() {
             {mutation.isPending ? 'Verifying Validation Parameters...' : 'Sign In Account'}
           </Button>
         </form>
-
-        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <p className="text-xs text-center text-muted-foreground mb-2">Don't have an account?</p>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleDemoLogin} 
-            className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950"
-          >
-            View Live Demo
-          </Button>
-        </div>
 
         <p className="text-xs text-muted-foreground text-center">
           Don't have an account yet?{' '}

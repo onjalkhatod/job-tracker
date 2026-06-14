@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'sonner';
+import { api } from '@/lib/api'; // Centralized API helper
 import { getCountdown } from '@/lib/dateUtils';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,8 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon, Plus } from 'lucide-react';
 import Papa from 'papaparse';
-
-const API_URL = 'http://localhost:5000/api/applications';
 
 const statusColors = {
   APPLIED: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -40,13 +38,7 @@ export default function Applications() {
 
   const { data: applications = [], isLoading, isError } = useQuery({
     queryKey: ['applications'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data;
-    },
+    queryFn: () => api.applications.getAll(),
   });
 
   const handleExportCSV = () => {
@@ -68,13 +60,7 @@ export default function Applications() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (newApp) => {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(API_URL, newApp, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data;
-    },
+    mutationFn: (newApp) => api.applications.create(newApp),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
@@ -88,10 +74,7 @@ export default function Applications() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-    },
+    mutationFn: (id) => api.applications.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['applicationStats'] });

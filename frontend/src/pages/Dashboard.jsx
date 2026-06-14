@@ -1,43 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { Briefcase, Activity, CheckCircle, XCircle, Calendar, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Briefcase, Activity, CheckCircle, XCircle, Calendar, RefreshCw, AlertTriangle, XCircle as XCircleIcon } from 'lucide-react';
 import { useState } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { getCountdown } from '../utils/dateHelpers';
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
-  // Fetch analytical telemetry from backend stats portal
+  const [dismissed, setDismissed] = useState(false);
+
+  // Fetch analytical telemetry from backend stats portal using centralized api
   const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['applicationStats'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/applications/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard intelligence diagnostics');
-      }
-
-      return response.json();
-    },
+    queryFn: () => api.stats.get(),
   });
 
   const { data: upcomingInterviews = [] } = useQuery({
     queryKey: ['upcomingInterviews'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/interviews/upcoming', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data;
-    }
+    queryFn: () => api.interviews.getUpcoming(),
   });
-
-  const [dismissed, setDismissed] = useState(false);
 
   const isSameDay = (d1, d2) => {
     return d1.getFullYear() === d2.getFullYear() &&
@@ -65,20 +46,19 @@ const Dashboard = () => {
         <div className="max-w-md">
           <h3 className="text-lg font-semibold text-foreground">Failed to synchronize metrics</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ensure your local Express database environment is online and your user authentication token session is valid.
+            Ensure your database environment is online and your user authentication token session is valid.
           </p>
         </div>
-        <button
+        <Button
+          variant="outline"
           onClick={() => refetch()}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-slate-800"
         >
           Retry Connection
-        </button>
+        </Button>
       </div>
     );
   }
 
-  // Handle server default fallbacks safely
   const totalApplied = stats?.totalApplied ?? 0;
   const inProgress = stats?.inProgress ?? 0;
   const offers = stats?.offers ?? 0;
@@ -104,7 +84,7 @@ const Dashboard = () => {
       ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-background min-h-screen text-foreground transition-colors duration-300">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-background min-h-screen text-foreground transition-colors duration-300 animate-in fade-in duration-200">
       
       {/* Amber Banner Strip */}
       {todayInterviews.length > 0 && !dismissed && (
@@ -117,7 +97,7 @@ const Dashboard = () => {
             </span>
           </div>
           <button onClick={() => setDismissed(true)} className="text-amber-700 dark:text-amber-300 hover:text-amber-900">
-            <XCircle className="h-5 w-5" />
+            <XCircleIcon className="h-5 w-5" />
           </button>
         </div>
         <ul className="mt-2 text-sm space-y-1 list-disc list-inside">

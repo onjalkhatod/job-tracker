@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -53,33 +53,39 @@ export default function ApplicationForm({ application, onClose }) {
   }, [showInterviewSection, append]);
 
   const onSubmit = async (formData) => {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
     try {
       let appId = application?.id;
 
       if (isEditing) {
-        await axios.put(`http://localhost:5000/api/applications/${appId}`, {
+        await api.applications.update(appId, {
           company: formData.company,
           role: formData.role,
           status: formData.status,
           notes: formData.notes
-        }, { headers });
+        });
       } else {
-        const appRes = await axios.post('http://localhost:5000/api/applications', {
+        const appRes = await api.applications.create({
           company: formData.company,
           role: formData.role,
           status: formData.status,
           notes: formData.notes
-        }, { headers });
-        appId = appRes.data.id;
+        });
+        appId = appRes.id;
       }
 
       if (showInterviewSection && formData.interviews?.length > 0) {
         const validInterviews = formData.interviews.filter(i => i.date && i.time);
         for (const interview of validInterviews) {
-          await axios.post(`http://localhost:5000/api/applications/${appId}/interviews`, interview, { headers });
+          // If you haven't added interview creation to api.js yet, 
+          // ensure this fetch uses the same production-ready base URL logic
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/applications/${appId}/interviews`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(interview)
+          });
         }
       }
 
@@ -88,13 +94,12 @@ export default function ApplicationForm({ application, onClose }) {
       queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Pipeline operation failed');
+      toast.error(err.message || 'Pipeline operation failed');
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-2 max-h-[80vh] overflow-y-auto">
-      {/* Responsive Grid: Swaps from 1 col to 2 col automatically */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Company</label>
@@ -155,7 +160,6 @@ export default function ApplicationForm({ application, onClose }) {
                 </div>
               </div>
 
-              {/* Responsive Selects: Swaps to full width on mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-0.5">Round Type</label>
