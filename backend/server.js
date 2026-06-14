@@ -17,21 +17,11 @@ const prisma = require('./prismaClient');
 
 // CORS Configuration - Securely restricted to your frontend URL
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: process.env.CLIENT_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 };
 app.use(cors(corsOptions));
-
-async function checkDatabase() {
-  try {
-    await prisma.$connect();
-    console.log("✅ Successfully connected to database!");
-  } catch (error) {
-    console.error("❌ Database connection failed:", error.message);
-  }
-}
-
-checkDatabase();
 
 // Admin Reset Endpoint - Triggered via secret key for environment refresh
 app.post('/api/admin/reset-demo', async (req, res) => {
