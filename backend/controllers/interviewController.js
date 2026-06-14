@@ -1,51 +1,42 @@
 const prisma = require('../prismaClient');
 
 // POST /api/applications/:applicationId/interviews
+// POST /api/applications/:applicationId/interviews
 const createInterview = async (req, res, next) => {
   try {
-    // 1. CHANGE THIS: Look for it in the body, not in req.params
-    const { applicationId, date, time, round, notes, completed, format } = req.body;
+    // 🎯 Extract from req.params, not req.body
+    const { applicationId } = req.params; 
+    const { date, time, round, notes, completed, format, location } = req.body;
 
-    // 2. Validate the body field
+    // Validate essential fields
     if (!applicationId || !date || !time || !round || !format) {
-      return res.status(400).json({ error: "Missing required fields: applicationId, date, time, round, and format." });
+      return res.status(400).json({ error: "Missing required fields." });
     }
 
     const parsedAppId = parseInt(applicationId);
     
     if (isNaN(parsedAppId)) {
-      return res.status(400).json({ error: "Invalid application ID format passed to the server." });
+      return res.status(400).json({ error: "Invalid application ID." });
     }
 
-    try {
-      const newInterview = await prisma.interview.create({
-        data: {
-          date: new Date(date),       
-          time: time,
-          round: round,                
-          notes: notes || "",
-          completed: completed || false,
-          format: format,              
-          application: {
-            connect: {
-              id: parsedAppId          
-            }
-          }
+    const newInterview = await prisma.interview.create({
+      data: {
+        date: new Date(date),        
+        time: time,
+        round: round,                
+        notes: notes || "",
+        completed: completed || false,
+        format: format,
+        location: location || "",
+        application: {
+          connect: { id: parsedAppId } // Connects based on URL ID
         }
-      });
+      }
+    });
 
-      return res.status(201).json(newInterview);
-
-    } catch (prismaError) {
-      console.error("Prisma Database Field Error Details:", prismaError.message);
-      return res.status(400).json({ 
-        error: "Database integrity violation.",
-        details: prismaError.message 
-      });
-    }
-
+    return res.status(201).json(newInterview);
   } catch (error) {
-    console.error('Global Controller Crash:', error);
+    console.error('Controller Error:', error);
     next(error);
   }
 };

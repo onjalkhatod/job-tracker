@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require('../middleware/auth');
 const { 
-  createInterview, // <--- Add this import
+  createInterview, 
   updateInterview, 
   deleteInterview, 
-  getUpcomingInterviews 
+  getUpcomingInterviews,
+  getApplicationInterviews 
 } = require('../controllers/interviewController');
 
-// Add this route:
-router.post('/', verifyToken, createInterview); 
+router.post('/applications/:applicationId/interviews', verifyToken, createInterview); 
+
+router.get('/applications/:applicationId/interviews', verifyToken, getApplicationInterviews);
 
 router.get('/upcoming', verifyToken, getUpcomingInterviews);
 router.put('/:id', verifyToken, updateInterview);
