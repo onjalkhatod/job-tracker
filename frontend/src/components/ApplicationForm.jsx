@@ -76,7 +76,7 @@ export default function ApplicationForm({ application, onClose }) {
       if (showInterviewSection && formData.interviews?.length > 0) {
         const validInterviews = formData.interviews.filter(i => i.date && i.time);
         for (const interview of validInterviews) {
-          await fetch(`${BASE_URL}/applications/${appId}/interviews`, {
+          await fetch(`${api.BASE_URL}/applications/${appId}/interviews`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',

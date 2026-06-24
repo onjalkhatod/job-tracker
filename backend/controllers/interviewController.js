@@ -4,11 +4,9 @@ const prisma = require('../prismaClient');
 // POST /api/applications/:applicationId/interviews
 const createInterview = async (req, res, next) => {
   try {
-    // 🎯 Extract from req.params, not req.body
     const { applicationId } = req.params; 
     const { date, time, round, notes, completed, format, location } = req.body;
 
-    // Validate essential fields
     if (!applicationId || !date || !time || !round || !format) {
       return res.status(400).json({ error: "Missing required fields." });
     }
@@ -66,10 +64,6 @@ const updateInterview = async (req, res, next) => {
 
     const interviewId = parseInt(id);
 
-    // 1. Log for debugging
-    console.log("DEBUG: Attempting to update interview ID:", interviewId);
-
-    // 2. Defensive Check: Does the record exist first?
     const existingInterview = await prisma.interview.findUnique({
       where: { id: interviewId },
     });
@@ -82,7 +76,6 @@ const updateInterview = async (req, res, next) => {
       });
     }
 
-    // 3. Perform the update
     const updatedInterview = await prisma.interview.update({
       where: { id: interviewId },
       data: {
@@ -97,7 +90,6 @@ const updateInterview = async (req, res, next) => {
 
     res.status(200).json(updatedInterview);
   } catch (error) {
-    // 4. Log detailed database errors for troubleshooting
     console.error("FULL PRISMA ERROR:", error);
     res.status(400).json({ 
       error: "Failed to update interview.", 

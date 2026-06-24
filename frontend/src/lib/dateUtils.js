@@ -1,12 +1,11 @@
 /**
  * Computes a human-readable countdown relative to the current calendar date calendar day bounds.
- * @param {string} dateString ISO style date string (YYYY-MM-DD)
+ * @param {string} dateString 
  * @returns {"Today" | "Tomorrow" | "In N days" | "Overdue"}
  */
 export function getCountdown(dateString) {
   if (!dateString) return '';
   
-  // Strip out hours/minutes/seconds to calculate pure midnight-to-midnight boundary deltas
   const targetDate = new Date(dateString);
   targetDate.setHours(0, 0, 0, 0);
   
