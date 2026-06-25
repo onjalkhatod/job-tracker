@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -10,35 +9,52 @@ import { Label } from "@/components/ui/label";
 import { Lock, User, Calendar } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Assuming you have this helper or similar in your app
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default function Profile() {
   const [formData, setFormData] = useState({ currentPassword: '', newPassword: '' });
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
-  // Fetch user data
+  // 1. Fetch user data using native fetch
   const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:5000/api/auth/me', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const res = await fetch(`${BASE_URL}/auth/me`, {
+        headers: getHeaders()
       });
-      return res.data;
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json();
     }
   });
 
+  // 2. Handle password update using native fetch
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoadingUpdate(true);
     try {
-      await axios.put('http://localhost:5000/api/auth/password', formData, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await fetch(`${BASE_URL}/auth/password`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(formData)
       });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to update password');
+      
       toast.success('Password updated successfully!');
       setFormData({ currentPassword: '', newPassword: '' });
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update password');
+      toast.error(err.message);
     } finally {
       setIsLoadingUpdate(false);
     }
@@ -93,7 +109,6 @@ export default function Profile() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {}
           <form onSubmit={handleSubmit} className="space-y-4 w-full">
             <div className="space-y-2">
               <Label htmlFor="current">Current Password</Label>
