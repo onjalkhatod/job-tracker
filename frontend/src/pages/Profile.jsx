@@ -1,348 +1,116 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import axios from 'axios';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { getCountdown } from '@/lib/dateUtils';
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; 
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Lock, User, Calendar } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, Trash2, Briefcase, Search, Filter, CalendarClock, ExternalLink, AlertOctagon, Plus } from 'lucide-react';
-import Papa from 'papaparse';
 
-const statusColors = {
-  APPLIED: 'bg-blue-50 text-blue-700 border-blue-200',
-  SCREENING: 'bg-amber-50 text-amber-700 border-amber-200',
-  INTERVIEW: 'bg-purple-50 text-purple-700 border-purple-200',
-  OFFER: 'bg-green-50 text-green-700 border-green-200',
-  REJECTED: 'bg-red-50 text-red-700 border-red-200',
-};
+export default function Profile() {
+  const [formData, setFormData] = useState({ currentPassword: '', newPassword: '' });
+  const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
-export default function Applications() {
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-
-  // Form State Configurations
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ company: '', role: '', status: 'APPLIED', notes: '' });
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
-
-  const { data: applications = [], isLoading, isError } = useQuery({
-    queryKey: ['applications'],
-    queryFn: () => api.applications.getAll(),
-  });
-
-  const handleExportCSV = () => {
-    if (!filteredApplications || filteredApplications.length === 0) {
-      toast.error('No data available to export');
-      return;
-    }
-    const csv = Papa.unparse(filteredApplications);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const date = new Date().toISOString().split('T')[0];
-    link.href = url;
-    link.setAttribute('download', `applications-${date}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Applications exported successfully');
-  };
-
-  const createMutation = useMutation({
-    mutationFn: (newApp) => api.applications.create(newApp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
-      setIsModalOpen(false);
-      setFormData({ company: '', role: '', status: 'APPLIED', notes: '' });
-      toast.success('New role successfully logged to ledger');
-    },
-    onError: () => {
-      toast.error('Failed to register application details');
+  // Fetch user data
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:5000/api/auth/me', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      return res.data;
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => api.applications.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['applicationStats'] });
-      toast.success('Application profile safely flushed');
-    }
-  });
-
-  const handleFormSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.company || !formData.role) {
-      toast.error('Company identity and role fields are required');
-      return;
+    setIsLoadingUpdate(true);
+    try {
+      await axios.put('http://localhost:5000/api/auth/password', formData, {
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      toast.success('Password updated successfully!');
+      setFormData({ currentPassword: '', newPassword: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update password');
+    } finally {
+      setIsLoadingUpdate(false);
     }
-    createMutation.mutate(formData);
   };
-
-  const filteredApplications = applications.filter((app) => {
-    const matchesSearch = app.company.toLowerCase().includes(debouncedSearch.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((n) => <Skeleton key={n} className="h-44 w-full rounded-xl" />)}
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-16 max-w-md mx-auto text-center space-y-4 animate-in fade-in duration-200">
-        <div className="h-12 w-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
-          <AlertOctagon className="h-6 w-6" />
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-900 text-lg">Pipeline Sync Failure</h3>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-            We ran into an authentication mismatch or network issue while trying to load your tracked roles ledger matrix.
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['applications'] })}
-          className="border-slate-200 text-slate-700 hover:bg-slate-50"
-        >
-          Retry Connection Stream
-        </Button>
-      </div>
-    );
-  }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-h-screen">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
+      <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
       
-      {/* Action Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Tracked Roles</h1>
-          <p className="text-muted-foreground mt-1">Refine and filter your ongoing opportunities.</p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-stretch sm:items-center">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search companies..."
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="w-full sm:w-44">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Filter by status" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Statuses</SelectItem>
-                <SelectItem value="APPLIED">Applied</SelectItem>
-                <SelectItem value="SCREENING">Screening</SelectItem>
-                <SelectItem value="INTERVIEW">Interview</SelectItem>
-                <SelectItem value="OFFER">Offer</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap"
-          >
-            <Plus className="h-4 w-4 stroke-[3]" />
-            Add Application
-          </Button>
-
-          <Button 
-            variant="outline" 
-            onClick={handleExportCSV}
-            className="font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap">
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
-      </div>
-
-      {filteredApplications.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-border rounded-xl bg-muted/30">
-          <Briefcase className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="font-bold text-foreground">No matching items resolved</h3>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredApplications.map((app) => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const nextUpcoming = app.interviews?.find(i => !i.completed && i.date >= todayStr);
-            
-            const countdownText = nextUpcoming ? getCountdown(nextUpcoming.date) : null;
-            const isToday = countdownText === 'Today';
-
-            return (
-              <div 
-                key={app.id} 
-                className={`group border border-border rounded-xl p-5 bg-card shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
-                  isToday ? 'border-l-4 border-l-amber-500' : ''
-                }`}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-xl text-card-foreground tracking-tight flex items-center gap-1.5">
-                        {app.company}
-                        <Link to={`/applications/${app.id}`} className="text-muted-foreground hover:text-foreground transition-colors">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </Link>
-                      </h3>
-                      <p className="text-muted-foreground font-semibold text-sm mt-0.5">{app.role}</p>
-                    </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[app.status]}`}>
-                      {app.status}
-                    </span>
-                  </div>
-
-                  {nextUpcoming && (
-                    <div className={`p-2.5 rounded-lg border flex items-center gap-2 text-xs font-semibold ${
-                      isToday 
-                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border-amber-100 dark:border-amber-800 animate-pulse' 
-                        : 'bg-muted text-muted-foreground border-border'
-                    }`}>
-                      <CalendarClock className={`h-4 w-4 ${isToday ? 'text-amber-600' : 'text-muted-foreground'}`} />
-                      <span>
-                        {isToday ? `Interview today — ${nextUpcoming.time}` : `${countdownText} (${nextUpcoming.round})`}
-                      </span>
-                    </div>
-                  )}
-
-                  {app.notes && (
-                    <p className="text-sm text-muted-foreground bg-muted p-2.5 rounded-lg border border-border line-clamp-2">
-                      {app.notes}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between border-t border-border mt-5 pt-4 text-xs text-muted-foreground">
-                  <span>Added {new Date(app.createdAt).toLocaleDateString()}</span>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Flush tracking row record?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will remove all associated processes for <strong className="font-bold">{app.company}</strong> permanently.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteMutation.mutate(app.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                          Confirm Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+      {/* Profile Info Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" /> Profile Information
+          </CardTitle>
+          <CardDescription>Your account details.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isUserLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Name</Label>
+                <div className="font-medium text-lg">{user?.name || 'N/A'}</div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Email</Label>
+                <div className="font-medium text-lg">{user?.email || 'N/A'}</div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" /> Member Since
+                </Label>
+                <div className="font-medium text-lg">
+                  {user?.createdAt ? format(new Date(user.createdAt), 'MMMM do, yyyy') : 'Loading...'}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Integrated Shadow Form Capture Dialog Shell */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-bold text-xl text-foreground">Track New Position</DialogTitle>
-            <DialogDescription>
-              Register ongoing employment metrics to aggregate pipeline charting.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Company Identity</label>
-              <Input 
-                type="text" 
-                placeholder="e.g. Stripe, Google" 
-                value={formData.company}
-                onChange={(e) => setFormData({...formData, company: e.target.value})}
-              />
+      {/* Password Update Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" /> Change Password
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {}
+          <form onSubmit={handleSubmit} className="space-y-4 w-full">
+            <div className="space-y-2">
+              <Label htmlFor="current">Current Password</Label>
+              <Input id="current" type="password" required value={formData.currentPassword} 
+                     onChange={(e) => setFormData({...formData, currentPassword: e.target.value})} />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Role Title</label>
-              <Input 
-                type="text" 
-                placeholder="e.g. Frontend Engineer" 
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="new">New Password</Label>
+              <Input id="new" type="password" required value={formData.newPassword} 
+                     onChange={(e) => setFormData({...formData, newPassword: e.target.value})} />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pipeline Stage Status</label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(val) => setFormData({...formData, status: val})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="APPLIED">Applied</SelectItem>
-                  <SelectItem value="SCREENING">Screening</SelectItem>
-                  <SelectItem value="INTERVIEW">Interview</SelectItem>
-                  <SelectItem value="OFFER">Offer</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Context Notes (Optional)</label>
-              <Input 
-                type="text" 
-                placeholder="Salary, tech stack, or points of interest..." 
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              />
-            </div>
-            <DialogFooter className="pt-4 border-t border-border gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                Dismiss
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Logging data...' : 'Commit Position'}
-              </Button>
-            </DialogFooter>
+            <Button type="submit" disabled={isLoadingUpdate}>
+              {isLoadingUpdate ? 'Updating...' : 'Update Password'}
+            </Button>
           </form>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }

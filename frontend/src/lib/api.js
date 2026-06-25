@@ -57,6 +57,12 @@ export const api = {
         headers: getHeaders(),
       }).then(handleResponse),
 
+    getOne: (id) =>
+      fetch(`${BASE_URL}/applications/${id}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      }).then(handleResponse),
+
     create: (applicationData) => 
       fetch(`${BASE_URL}/applications`, {
         method: 'POST',
@@ -94,6 +100,18 @@ export const api = {
         headers: getHeaders(),
       });
       return handleResponse(response);
-    }
+    },
+    create: (applicationId, interviewData) =>
+      fetch(`${BASE_URL}/applications/${applicationId}/interviews`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(interviewData),
+      }).then(handleResponse),
+
+    delete: (interviewId) =>
+      fetch(`${BASE_URL}/interviews/${interviewId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      }).then(handleResponse),
   }
 };
