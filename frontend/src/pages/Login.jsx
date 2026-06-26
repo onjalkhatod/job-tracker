@@ -32,8 +32,8 @@ export default function Login() {
   
   useEffect(() => {
     if (searchParams.get("demo") === "true") {
-      setValue("email", "demo@jobtracker.com");
-      setValue("password", "demo123456");
+      setValue("email", "demo@trackr.com");
+      setValue("password", "demo1234");
     }
   }, [searchParams, setValue]);
 

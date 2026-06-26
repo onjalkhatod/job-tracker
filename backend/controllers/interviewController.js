@@ -135,13 +135,18 @@ const updateInterview = async (req, res, next) => {
 const deleteInterview = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const interviewId = parseInt(id);
+
+    if (isNaN(interviewId)) {
+      return res.status(400).json({ error: "Invalid interview ID." });
+    }
 
     const { reason } = await findOwnedInterview(interviewId, req.user.userId);
     if (reason === 'NOT_FOUND') return res.status(404).json({ error: "Interview not found." });
     if (reason === 'FORBIDDEN') return res.status(403).json({ error: "You do not have permission to delete this interview." });
 
     await prisma.interview.delete({
-      where: { id: parseInt(id) }
+      where: { id: interviewId }
     });
 
     res.status(200).json({ message: 'Interview deleted successfully' });
@@ -161,11 +166,13 @@ const getUpcomingInterviews = async (req, res, next) => {
       where: {
         completed: false,
         date: { gte: now, lte: sevenDaysFromNow },
-        application: { userId: req.user.userId },   // ADDED
+        application: { userId: req.user.userId },
       },
       include: { application: true },
       orderBy: { date: 'asc' }
     });
+
+res.status(200).json(upcoming);
 res.status(200).json(upcoming);
 
     const filtered = upcoming.filter(i => i.application && i.application.userId === req.user?.id);

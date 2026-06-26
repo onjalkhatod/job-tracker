@@ -1,11 +1,10 @@
 const prisma = require('../prismaClient');
 const getApplications = async (req, res) => {
   try {
-    console.log("UserID:", req.user.userId)
     const applications = await prisma.application.findMany({
-      where: { userId: req.user.userId }
+      where: { userId: req.user.userId },
+      include: { interviews: true }
     });
-    console.log("DEBUG: Found applications count:", applications.length); 
     res.json(applications);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -148,7 +147,7 @@ const getApplicationById = async (req, res, next) => {
     if (application.userId !== req.user.userId) {
       return res.status(403).json({ error: "You do not have permission to view this application." });
     }
-    
+
     res.status(200).json(application);
   } catch (error) {
     next(error);

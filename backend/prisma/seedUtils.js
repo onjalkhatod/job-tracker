@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
-async function runSeedScript() {
+async function runSeedScript(prisma) {
 
   await prisma.interview.deleteMany();
   await prisma.application.deleteMany();
