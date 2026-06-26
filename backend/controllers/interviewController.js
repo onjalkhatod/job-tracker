@@ -1,5 +1,22 @@
 const prisma = require('../prismaClient');
 
+async function findOwnedInterview(interviewId, userId) {
+  const interview = await prisma.interview.findUnique({
+    where: { id: interviewId },
+    include: { application: true },
+  });
+  if (!interview) return { reason: 'NOT_FOUND' };
+  if (interview.application.userId !== userId) return { reason: 'FORBIDDEN' };
+  return { reason: null };
+}
+
+async function findOwnedApplication(applicationId, userId) {
+  const application = await prisma.application.findUnique({ where: { id: applicationId } });
+  if (!application) return { reason: 'NOT_FOUND' };
+  if (application.userId !== userId) return { reason: 'FORBIDDEN' };
+  return { reason: null };
+}
+
 // POST /api/applications/:applicationId/interviews
 // POST /api/applications/:applicationId/interviews
 const createInterview = async (req, res, next) => {
@@ -7,6 +24,7 @@ const createInterview = async (req, res, next) => {
     const { applicationId } = req.params; 
     const { date, time, round, notes, completed, format, location } = req.body;
 
+    
     if (!applicationId || !date || !time || !round || !format) {
       return res.status(400).json({ error: "Missing required fields." });
     }
@@ -16,6 +34,10 @@ const createInterview = async (req, res, next) => {
     if (isNaN(parsedAppId)) {
       return res.status(400).json({ error: "Invalid application ID." });
     }
+
+    const { reason } = await findOwnedApplication(parsedAppId, req.user.userId);
+    if (reason === 'NOT_FOUND') return res.status(404).json({ error: "Application not found." });
+    if (reason === 'FORBIDDEN') return res.status(403).json({ error: "You do not have permission to modify this application." });
 
     const newInterview = await prisma.interview.create({
       data: {
@@ -27,7 +49,7 @@ const createInterview = async (req, res, next) => {
         format: format,
         location: location || "",
         application: {
-          connect: { id: parsedAppId } // Connects based on URL ID
+          connect: { id: parsedAppId }
         }
       }
     });
@@ -44,6 +66,14 @@ const getApplicationInterviews = async (req, res, next) => {
   try {
     const applicationId = req.params.applicationId || req.params.id;
     const parsedAppId = parseInt(applicationId);
+  
+    if (isNaN(parsedAppId)) {
+      return res.status(400).json({ error: "Invalid application ID." });
+    }
+
+    const { reason } = await findOwnedApplication(parsedAppId, req.user.userId);
+    if (reason === 'NOT_FOUND') return res.status(404).json({ error: "Application not found." });
+    if (reason === 'FORBIDDEN') return res.status(403).json({ error: "You do not have permission to view this application." });
 
     const interviews = await prisma.interview.findMany({
       where: { applicationId: parsedAppId },
@@ -68,12 +98,15 @@ const updateInterview = async (req, res, next) => {
       where: { id: interviewId },
     });
 
-    if (!existingInterview) {
-      console.error(`DEBUG: Update failed. Interview ID ${interviewId} not found.`);
+    const { reason } = await findOwnedInterview(interviewId, req.user.userId);
+    if (reason === 'NOT_FOUND') {
       return res.status(404).json({ 
         error: "Interview not found.", 
         message: `No interview record with ID ${interviewId} exists in the database.` 
       });
+    }
+    if (reason === 'FORBIDDEN') {
+      return res.status(403).json({ error: "You do not have permission to modify this interview." });
     }
 
     const updatedInterview = await prisma.interview.update({
@@ -103,6 +136,10 @@ const deleteInterview = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    const { reason } = await findOwnedInterview(interviewId, req.user.userId);
+    if (reason === 'NOT_FOUND') return res.status(404).json({ error: "Interview not found." });
+    if (reason === 'FORBIDDEN') return res.status(403).json({ error: "You do not have permission to delete this interview." });
+
     await prisma.interview.delete({
       where: { id: parseInt(id) }
     });
@@ -123,11 +160,13 @@ const getUpcomingInterviews = async (req, res, next) => {
     const upcoming = await prisma.interview.findMany({
       where: {
         completed: false,
-        date: { gte: now, lte: sevenDaysFromNow }
+        date: { gte: now, lte: sevenDaysFromNow },
+        application: { userId: req.user.userId },   // ADDED
       },
       include: { application: true },
       orderBy: { date: 'asc' }
     });
+res.status(200).json(upcoming);
 
     const filtered = upcoming.filter(i => i.application && i.application.userId === req.user?.id);
 

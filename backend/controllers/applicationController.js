@@ -127,6 +127,12 @@ const getApplicationStats = async (req, res) => {
 const getApplicationById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const parsedId = parseInt(id);
+
+    if (isNaN(parsedId)) {
+      return res.status(400).json({ error: "Invalid application ID." });
+    }
+
 
     const application = await prisma.application.findUnique({
       where: { id: parseInt(id) },
@@ -139,6 +145,10 @@ const getApplicationById = async (req, res, next) => {
       return res.status(404).json({ error: "Application tracking card parameters not found." });
     }
 
+    if (application.userId !== req.user.userId) {
+      return res.status(403).json({ error: "You do not have permission to view this application." });
+    }
+    
     res.status(200).json(application);
   } catch (error) {
     next(error);
