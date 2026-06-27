@@ -48,6 +48,19 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       }).then(handleResponse),
+
+    me: () =>
+      fetch(`${BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: getHeaders(),
+      }).then(handleResponse),
+
+    changePassword: (passwordData) =>
+      fetch(`${BASE_URL}/auth/password`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(passwordData),
+      }).then(handleResponse),
   },
 
   applications: {
@@ -106,6 +119,13 @@ export const api = {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(interviewData),
+      }).then(handleResponse),
+
+    update: (interviewId, updateData) =>
+      fetch(`${BASE_URL}/interviews/${interviewId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updateData),
       }).then(handleResponse),
 
     delete: (interviewId) =>

@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, A
 import { Briefcase, Activity, CheckCircle, XCircle, Calendar, RefreshCw, AlertTriangle, XCircle as XCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { getCountdown } from '../utils/dateHelpers';
+import { getCountdown } from '@/lib/dateUtils';
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
@@ -63,15 +63,9 @@ const Dashboard = () => {
   const inProgress = stats?.inProgress ?? 0;
   const offers = stats?.offers ?? 0;
   const rejected = stats?.rejected ?? 0;
-  const upcomingCount = stats?.upcomingInterviews ?? 0;
+  const upcomingCount = upcomingInterviews.length;
 
-  const statusData = [
-    { name: 'Applied', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'APPLIED')?.count || 0 },
-    { name: 'Screening', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'SCREENING')?.count || 0 },
-    { name: 'Interview', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'INTERVIEW')?.count || 0 },
-    { name: 'Offers', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'OFFER')?.count || 0 },
-    { name: 'Rejected', count: stats?.byStatus.find(s => s.name.toUpperCase() === 'REJECTED')?.count || 0 },
-  ];
+  const statusData = stats?.byStatus ?? [];
 
   const chronologicalData = stats?.monthlyTrends && stats.monthlyTrends.length > 0 
     ? stats.monthlyTrends 
